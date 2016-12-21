@@ -6,74 +6,68 @@
 //Stuff needed for c++
 #include <cstring>
 #include <unistd.h>
+#include <string>
 
+//C++ Default stuff
+#include <iostream>
+using namespace std;
 
 #define SERVER_PORT 1067
 
-/*
-char *choppy(char *s)
-{
-	char *n = malloc(strlen(s ? s : "\n"));
-	if(s)
-		strcpy(n, s);
-	n[strlen(n) - 1] = '\0';
-	return n;
-}
-*/
-
+//this just echoes whatever it received.  Used for testing
 void myService(int in, int out)
 {
+    printf("myService.\n");
     unsigned char buf[1024];
     int count;
-    while((count = read(in, buf, 1024)) > 0)
+    char hexString[1024];
+    //while((count = read(in, buf, 1024)) > 0){
+        //printf("testing\n");
+        count = read(in, buf, 1024);
         write(out, buf, count);
+    //}
+    printf("You made it this far.");
+    for(int i = 0; i < count; i++){
+        printf("Hexadecimal: %xhh, %d\n", buf[i], buf[i]);
+        //printf("This: ");
+        //sprintf(hexString, "0x%08X", buf[i]);
+        //printf("\n");
+    }
 }
 
 void returnFile(int in, int out)
 {
-		unsigned char buff[256]={0};
-		int count;
-	//while((count = read(in, buff, 65535)) > 0){
-		//write(out, buff, count);
-		//printf("User wrote this:");		
-		//printf(buff);
-		//char *test = choppy(buff);
-		//printf("Test succeeded");		
-		//printf(test);
-		FILE *fp = fopen("sample_file.txt", "rb");		
-		//FILE *fp = fopen("sample_file.txt", "rb");
-        	if(fp==NULL)
-        	{
-            		printf("File open error");
-            		//return 1;   
-        	}
-		/* First read file in chunks of 256 bytes */
-        	//unsigned char buff[256]={0};
-        	int nread = fread(buff,1,256,fp);
-        	printf("Bytes read %d \n", nread);
+        unsigned char buff[256]={0};
+        int count;
+        FILE *fp = fopen("sample_file.txt", "rb");      
+            if(fp==NULL)
+            {
+                    printf("File open error");
+                    return;   
+            }
+            int nread = fread(buff,1,256,fp);
+            printf("Bytes read %d \n", nread);
 
 
-        	/* If read was success, send data. */
-        	if(nread > 0)
-        	{
-            		printf("Sending \n");
-            		write(out, buff, nread);
-        	}
+            /* If read was success, send data. */
+            if(nread > 0)
+            {
+                    printf("Sending \n");
+                    write(out, buff, nread);
+            }
 
-        	/*
-        	 * There is something tricky going on with read .. 
-        	 * Either there was error, or we reached end of file.
-        	 */
-	
-        	if (nread < 256)
-        	{
-            	    if (feof(fp))
-                	printf("End of file\n");
-        	    if (ferror(fp))
-        	        printf("Error reading\n");
-        	}
-	//}
-	
+            /*
+             * There is something tricky going on with read .. 
+             * Either there was error, or we reached end of file.
+             */
+    
+            if (nread < 256)
+            {
+                if (feof(fp))
+                    printf("End of file\n");
+                if (ferror(fp))
+                    printf("Error reading\n");
+            }
 }
 
 int main()
@@ -94,10 +88,11 @@ int main()
         client_len = sizeof(client);
         fd = accept(sock, (struct sockaddr *)&client, (socklen_t*)  &client_len);
         printf("got connection\n");
-        //myService(fd, fd);
-	returnFile(fd, fd);
-	//myService(fd, fd);        
-	close(fd);
+        //returnFile(fd, fd);
+        myService(fd, fd);        
+        //close(fd);
     }
+    //Now i don't get that weird error
+    close(fd);
     return 0;
 }
