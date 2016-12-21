@@ -14,25 +14,61 @@ using namespace std;
 
 #define SERVER_PORT 1067
 
+bool checkForGet(unsigned char buf[])
+{
+     return (((char) buf[0]) == 'G' && ((char) buf[1]) == 'E' && ((char) buf[2]) == 'T');
+}
+
+string checkForWebpage(unsigned char buf[])
+{
+    int start, end, i;
+    start = end = i = 4;
+    while(((char)buf[end]) != ' ')
+        end++;
+    for(i < (end - start + 1); i++){
+        //in progress...
+    }
+}
+
 //this just echoes whatever it received.  Used for testing
 void myService(int in, int out)
 {
     printf("myService.\n");
     unsigned char buf[1024];
     int count;
-    char hexString[1024];
+    //char hexString[1024];
     //while((count = read(in, buf, 1024)) > 0){
         //printf("testing\n");
         count = read(in, buf, 1024);
         write(out, buf, count);
     //}
+
+
     printf("You made it this far.");
     for(int i = 0; i < count; i++){
         printf("Hexadecimal: %xhh, %d\n", buf[i], buf[i]);
         //printf("This: ");
         //sprintf(hexString, "0x%08X", buf[i]);
         //printf("\n");
+        //int number = (int) strtol(reinterpret_cast<const char *>(buf[i]), NULL, 0);
+        //printf("%d\n", number);
+        int j = (int) buf[i];
+        char cool = (char) j;
+        char cool2 = (char) buf[i];
+        printf("%d, %c, %c\n", j, cool, cool2);
     }
+
+    //char a, b, c;
+    //a = (char) buf[0];
+    //b = (char) buf[1];
+    //c = (char) buf[2];
+    //if(a == 'G' && b == 'E' && c == 'T'){
+        if(checkForGet(buf)){
+            printf("This is a GET request\n");
+        }else{
+            printf("Not a GET request\n");
+        }
+    //}
 }
 
 void returnFile(int in, int out)
