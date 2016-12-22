@@ -1,5 +1,13 @@
-/** @AUTHOR Kenneth Adair
+/** @AUTHOR     Kenneth Adair
+*   @FILENAME   CServer.cpp
 *   The goal is for this server to be able to process a GET request from CURL and return the appropriate file.
+*
+*   Version 1.0
+*   Completed 12/22/16
+*   Successfully returns the contents of a file from a CURL GET request
+*   After compiling and running this program, in a seperate window type:
+*   curl localhost:1067/index.html
+*   And then the server will display the contents of the index.html file to the user.
 */
 
 
@@ -24,7 +32,7 @@ using namespace std;
 *   Given a buffer this determines if it's a GET request by checking
 *   the first 3 letters of the buffer.
 */
-bool checkForGet(unsigned char buf[])
+bool isGetRequest(unsigned char buf[])
 {
      return (((char) buf[0]) == 'G' && ((char) buf[1]) == 'E' && ((char) buf[2]) == 'T');
 }
@@ -32,7 +40,7 @@ bool checkForGet(unsigned char buf[])
 /** @AUTHOR Kenneth Adair
 *   Given a buffer of a GET request from CURL this retrieves the name of the file.  
 */
-string checkForWebpage(unsigned char buf[])
+string webpageName(unsigned char buf[])
 {
     //Arbitrary filename size
     char filename[255];
@@ -47,45 +55,28 @@ string checkForWebpage(unsigned char buf[])
     for(i = start; i < end; i++)
         filename[i - start] = (char) buf[i];
 
+    for(i = start; i < end - 1; i++)
+        filename[i - start] = filename[i - start + 1];
+
     //Put a null terminator at the end of the string and then return it
-    filename[end - start] = '\0';
+    filename[end - start - 1] = '\0';
     return filename;
 }
-
-//this just echoes whatever it received.  Used for testing
-void myService(int in, int out)
+/** @AUTHOR Kenneth Adair
+*   This method writes the contents of a file out
+*   up to 65535 bytes big.  
+*/
+void returnFile(int in, int out, string filename)
 {
-    unsigned char buf[1024];
-    int count;
-    count = read(in, buf, 1024);
-    write(out, buf, count);
-
-    for(int i = 0; i < count; i++){
-        int j = (int) buf[i];
-        char cool = (char) j;
-        char cool2 = (char) buf[i];
-        printf("%d, %c, %c\n", j, cool, cool2);
-    }
-
-    if(checkForGet(buf)){
-        printf("This is a GET request\n");
-        cout << "Filename is: " << checkForWebpage(buf) << endl;
-     }else{
-        printf("Not a GET request\n");
-     }
-}
-
-void returnFile(int in, int out)
-{
-        unsigned char buff[256]={0};
+        unsigned char buff[65535]={0};
         int count;
-        FILE *fp = fopen("sample_file.txt", "rb");      
+        FILE *fp = fopen(filename.c_str(), "rb");      
             if(fp==NULL)
             {
                     printf("File open error");
                     return;   
             }
-            int nread = fread(buff,1,256,fp);
+            int nread = fread(buff,1,65535,fp);
             printf("Bytes read %d \n", nread);
 
 
@@ -101,13 +92,29 @@ void returnFile(int in, int out)
              * Either there was error, or we reached end of file.
              */
     
-            if (nread < 256)
+            if (nread < 65535)
             {
                 if (feof(fp))
                     printf("End of file\n");
                 if (ferror(fp))
                     printf("Error reading\n");
             }
+}
+
+//this just echoes whatever it received.  Used for testing
+void myService(int in, int out){
+    unsigned char buf[1024];
+    int count;
+    count = read(in, buf, 1024);
+    //write(out, buf, count);   //This is how we echo back the request that was sent
+
+    if(isGetRequest(buf)){
+        printf("This is a GET request\n");
+        cout << "Filename is: " << webpageName(buf) << endl;
+        returnFile(in, out, webpageName(buf));
+     }else{
+        printf("Not a GET request\n");
+     }
 }
 
 int main()
@@ -124,11 +131,11 @@ int main()
     listen(sock, 5);
     printf("listening...\n");
 
+    //Wait for users to connect, then send them the contents of files if they send a GET request
     while(1){
         client_len = sizeof(client);
         fd = accept(sock, (struct sockaddr *)&client, (socklen_t*)  &client_len);
         printf("got connection\n");
-        //returnFile(fd, fd);
         myService(fd, fd);        
         close(fd);
     }
