@@ -55,6 +55,10 @@ string webpageName(unsigned char buf[])
     for(i = start; i < end; i++)
         filename[i - start] = (char) buf[i];
 
+    /** FIX LATER
+    *   Awkwardly solves the problem that preceding code has a "\" which prevents my filename from being right.
+    *   This loop literally just removes the "\" from the filename.
+    */
     for(i = start; i < end - 1; i++)
         filename[i - start] = filename[i - start + 1];
 
