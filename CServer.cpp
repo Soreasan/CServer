@@ -1,9 +1,15 @@
+/** @AUTHOR Kenneth Adair
+*   The goal is for this server to be able to process a GET request from CURL and return the appropriate file.
+*/
+
+
+//Default networking stuff from the C version of this server.
 #include <netinet/in.h>
 #include <netdb.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-//Stuff needed for c++
+//Stuff needed for c code to work in a c++ file.
 #include <cstring>
 #include <unistd.h>
 #include <string>
@@ -14,74 +20,59 @@ using namespace std;
 
 #define SERVER_PORT 1067
 
+/** @AUTHOR Kenneth Adair
+*   Given a buffer this determines if it's a GET request by checking
+*   the first 3 letters of the buffer.
+*/
 bool checkForGet(unsigned char buf[])
 {
      return (((char) buf[0]) == 'G' && ((char) buf[1]) == 'E' && ((char) buf[2]) == 'T');
 }
 
+/** @AUTHOR Kenneth Adair
+*   Given a buffer of a GET request from CURL this retrieves the name of the file.  
+*/
 string checkForWebpage(unsigned char buf[])
 {
-    char filename[200];
+    //Arbitrary filename size
+    char filename[255];
     int start, end, i;
+    //Picked 4 beccause if it's a GET request then GET and a space eat up first 4 spots, index 4 should be a /
     start = end = 4;
-    while(((char)buf[end]) != ' '){
-        printf("%i\n", end);
+    //Loop to the end of the filename by checking for spaces.
+    while(((char)buf[end]) != ' ')
         end++;
-    }
-    printf("end is %d", end);
-    for(i = start; i < end; i++){
-        printf("Putting %c into string\n", buf[i]);
+
+    //Moves all the characters in the filename into a new array from the buffer
+    for(i = start; i < end; i++)
         filename[i - start] = (char) buf[i];
-    }
-    cout << filename << endl;
-    printf("%s\n", filename);
-    filename[end] = '\0';
-    string filenamez = filename;
-    cout << filenamez << endl;
+
+    //Put a null terminator at the end of the string and then return it
+    filename[end - start] = '\0';
     return filename;
 }
 
 //this just echoes whatever it received.  Used for testing
 void myService(int in, int out)
 {
-    printf("myService.\n");
     unsigned char buf[1024];
     int count;
-    //char hexString[1024];
-    //while((count = read(in, buf, 1024)) > 0){
-        //printf("testing\n");
-        count = read(in, buf, 1024);
-        write(out, buf, count);
-    //}
+    count = read(in, buf, 1024);
+    write(out, buf, count);
 
-
-    printf("You made it this far.");
     for(int i = 0; i < count; i++){
-        //printf("Hexadecimal: %xhh, %d\n", buf[i], buf[i]);
-        //printf("This: ");
-        //sprintf(hexString, "0x%08X", buf[i]);
-        //printf("\n");
-        //int number = (int) strtol(reinterpret_cast<const char *>(buf[i]), NULL, 0);
-        //printf("%d\n", number);
         int j = (int) buf[i];
         char cool = (char) j;
         char cool2 = (char) buf[i];
         printf("%d, %c, %c\n", j, cool, cool2);
     }
 
-    //char a, b, c;
-    //a = (char) buf[0];
-    //b = (char) buf[1];
-    //c = (char) buf[2];
-    //if(a == 'G' && b == 'E' && c == 'T'){
-        if(checkForGet(buf)){
-            printf("This is a GET request\n");
-            //printf("Filename is: %s\n", checkForWebpage(buf));
-            cout << "Filename is: " << checkForWebpage(buf) << endl;
-        }else{
-            printf("Not a GET request\n");
-        }
-    //}
+    if(checkForGet(buf)){
+        printf("This is a GET request\n");
+        cout << "Filename is: " << checkForWebpage(buf) << endl;
+     }else{
+        printf("Not a GET request\n");
+     }
 }
 
 void returnFile(int in, int out)
@@ -121,10 +112,10 @@ void returnFile(int in, int out)
 
 int main()
 {
+    //Boilerplate networking code
     int sock, fd, client_len;
     struct sockaddr_in server, client;
     struct servent *service;
-
     sock = socket(AF_INET, SOCK_STREAM, 0);
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -139,9 +130,8 @@ int main()
         printf("got connection\n");
         //returnFile(fd, fd);
         myService(fd, fd);        
-        //close(fd);
+        close(fd);
     }
-    //Now i don't get that weird error
-    close(fd);
+
     return 0;
 }
