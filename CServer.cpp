@@ -21,13 +21,24 @@ bool checkForGet(unsigned char buf[])
 
 string checkForWebpage(unsigned char buf[])
 {
+    char filename[200];
     int start, end, i;
-    start = end = i = 4;
-    while(((char)buf[end]) != ' ')
+    start = end = 4;
+    while(((char)buf[end]) != ' '){
+        printf("%i\n", end);
         end++;
-    for(i < (end - start + 1); i++){
-        //in progress...
     }
+    printf("end is %d", end);
+    for(i = start; i < end; i++){
+        printf("Putting %c into string\n", buf[i]);
+        filename[i - start] = (char) buf[i];
+    }
+    cout << filename << endl;
+    printf("%s\n", filename);
+    filename[end] = '\0';
+    string filenamez = filename;
+    cout << filenamez << endl;
+    return filename;
 }
 
 //this just echoes whatever it received.  Used for testing
@@ -46,7 +57,7 @@ void myService(int in, int out)
 
     printf("You made it this far.");
     for(int i = 0; i < count; i++){
-        printf("Hexadecimal: %xhh, %d\n", buf[i], buf[i]);
+        //printf("Hexadecimal: %xhh, %d\n", buf[i], buf[i]);
         //printf("This: ");
         //sprintf(hexString, "0x%08X", buf[i]);
         //printf("\n");
@@ -65,6 +76,8 @@ void myService(int in, int out)
     //if(a == 'G' && b == 'E' && c == 'T'){
         if(checkForGet(buf)){
             printf("This is a GET request\n");
+            //printf("Filename is: %s\n", checkForWebpage(buf));
+            cout << "Filename is: " << checkForWebpage(buf) << endl;
         }else{
             printf("Not a GET request\n");
         }
