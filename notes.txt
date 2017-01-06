@@ -1,1 +1,22 @@
+Some reference code:
 codereview.stackexchange.com/questions/43914/client-server-implementation-in-c-sending-data-files
+
+version 1.1 changes (1/6/17) implemented to CServer.cpp (Approximately 13 total changes.)
+10: updated comment to reflect that any filename can be returned.
+14, 20, 25: Removed unnecessary comments for includes
+29: Added comment to reflect that I'm not currently using port 80 
+because I have LAMP and specifically APACHE using port 80 right now.
+35: Updated function input to 'unsigned char * buf' rather than an array.
+43: Updated function input to 'unsigned char * buf' rather than an array.i
+43: Updated function name to 'getFilenameFromUri' to better reflect it's functionality, also
+updated the function calls on line 117 and 118 to reflect
+45: Changed the filename size from a hardcoded 255 to a const integer on 
+line 28 called FILENAME_SIZE
+71: Changed the limit of the size that can be returned to 
+100 MiB.  The limit is on line 27 as a const int called FILE_CONTENTS_SIZE
+73: Removed "int in" from the parameters necessary to call function because
+it was unused.
+78-105: Updated indentation.  Previously had two extra tabs for each line.
+84: Commented out line 84 since it's debugging code.
+108: Updated comment to try to more accurately explain the function/method.
+110: Filled the requested buffer with 0x00 initially to help with buffer exploits.

@@ -6,33 +6,33 @@
 *   Completed 12/22/16
 *   Successfully returns the contents of a file from a CURL GET request
 *   After compiling and running this program, in a seperate window type:
-*   curl localhost:1067/index.html
-*   And then the server will display the contents of the index.html file to the user.
+*   curl localhost:1067/filname
+*   And then the server will display the contents of the [filename] to the user.
+*
+*   Version 1.1
+*   Updated syntax without altering any functionality and kept line numbers mostly same.
 */
-
-
-//Default networking stuff from the C version of this server.
 #include <netinet/in.h>
 #include <netdb.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-//Stuff needed for c code to work in a c++ file.
+
 #include <cstring>
 #include <unistd.h>
 #include <string>
-
-//C++ Default stuff
 #include <iostream>
 using namespace std;
 
-#define SERVER_PORT 1067
+const int FILE_CONTENTS_SIZE = 104857600;  //100 MiB, a MiB is 2^20 bytes
+const int FILENAME_SIZE = 255;
+const int SERVER_PORT = 1067;    //Can't use port 80 right now b/c my machine is running LAMP
 
 /** @AUTHOR Kenneth Adair
 *   Given a buffer this determines if it's a GET request by checking
 *   the first 3 letters of the buffer.
 */
-bool isGetRequest(unsigned char buf[])
+bool isGetRequest(unsigned char *  buf)
 {
      return (((char) buf[0]) == 'G' && ((char) buf[1]) == 'E' && ((char) buf[2]) == 'T');
 }
@@ -40,10 +40,10 @@ bool isGetRequest(unsigned char buf[])
 /** @AUTHOR Kenneth Adair
 *   Given a buffer of a GET request from CURL this retrieves the name of the file.  
 */
-string webpageName(unsigned char buf[])
+string getFilenameFromUri(unsigned char * buf)
 {
-    //Arbitrary filename size
-    char filename[255];
+
+    char filename[FILENAME_SIZE];
     int start, end, i;
     //Picked 4 beccause if it's a GET request then GET and a space eat up first 4 spots, index 4 should be a /
     start = end = 4;
@@ -67,55 +67,55 @@ string webpageName(unsigned char buf[])
     return filename;
 }
 /** @AUTHOR Kenneth Adair
-*   This method writes the contents of a file out
-*   up to 65535 bytes big.  
+*   This method displays the contents of a file out to a user 
+*   up to a MiB (2^20 bytes) big by writing to an open file descriptor.  
 */
-void returnFile(int in, int out, string filename)
+void returnFile(int out, string filename)
 {
-        unsigned char buff[65535]={0};
-        int count;
-        FILE *fp = fopen(filename.c_str(), "rb");      
-            if(fp==NULL)
-            {
-                    printf("File open error");
-                    return;   
-            }
-            int nread = fread(buff,1,65535,fp);
-            printf("Bytes read %d \n", nread);
+    unsigned char buff[FILE_CONTENTS_SIZE]={0};
+    int count;
+    FILE *fp = fopen(filename.c_str(), "rb");      
+    if(fp==NULL)
+    {
+        printf("File open error");
+        return;   
+    }
+    int nread = fread(buff, 1, FILE_CONTENTS_SIZE, fp);
+    printf("Bytes read %d \n", nread);
 
 
-            /* If read was success, send data. */
-            if(nread > 0)
-            {
-                    printf("Sending \n");
-                    write(out, buff, nread);
-            }
+    /* If read was success, send data. */
+    if(nread > 0)
+    {
+        printf("Sending \n");
+        write(out, buff, nread);
+    }
 
-            /*
-             * There is something tricky going on with read .. 
-             * Either there was error, or we reached end of file.
-             */
-    
-            if (nread < 65535)
-            {
-                if (feof(fp))
-                    printf("End of file\n");
-                if (ferror(fp))
-                    printf("Error reading\n");
-            }
+    /*
+     * There is something tricky going on with read .. 
+     * Either there was error, or we reached end of file.
+     */   
+    if (nread < FILE_CONTENTS_SIZE)
+    {
+        if (feof(fp))
+            printf("End of file\n");
+        if (ferror(fp))
+            printf("Error reading\n");
+    }
 }
-
-//this just echoes whatever it received.  Used for testing
+/*  This method reads the buffer, determines if it's a GET request,
+*   then if it is calls returnFile to satisfy the request.  Otherwise do nothing.
+*/
 void myService(int in, int out){
-    unsigned char buf[1024];
+    unsigned char buf[1024] = "0x00";
     int count;
     count = read(in, buf, 1024);
     //write(out, buf, count);   //This is how we echo back the request that was sent
 
     if(isGetRequest(buf)){
         printf("This is a GET request\n");
-        cout << "Filename is: " << webpageName(buf) << endl;
-        returnFile(in, out, webpageName(buf));
+        cout << "Filename is: " << getFilenameFromUri(buf) << endl;
+        returnFile(out, getFilenameFromUri(buf));
      }else{
         printf("Not a GET request\n");
      }
