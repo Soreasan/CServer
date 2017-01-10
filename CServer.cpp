@@ -16,8 +16,6 @@
 #include <netdb.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-
 #include <cstring>
 #include <unistd.h>
 #include <string>
@@ -26,7 +24,7 @@ using namespace std;
 
 const int FILE_CONTENTS_SIZE = 104857600;  //100 MiB, a MiB is 2^20 bytes
 const int FILENAME_SIZE = 255;
-const int SERVER_PORT = 1067;    //Can't use port 80 right now b/c my machine is running LAMP
+const int SERVER_PORT = 1067;
 
 /** @AUTHOR Kenneth Adair
 *   Given a buffer this determines if it's a GET request by checking
@@ -34,27 +32,34 @@ const int SERVER_PORT = 1067;    //Can't use port 80 right now b/c my machine is
 */
 bool isGetRequest(unsigned char *  buf)
 {
-     return (((char) buf[0]) == 'G' && ((char) buf[1]) == 'E' && ((char) buf[2]) == 'T');
+    cout << "isGetRequest() method called" << endl;
+    return (((char) buf[0]) == 'G' && ((char) buf[1]) == 'E' && ((char) buf[2]) == 'T');
 }
 
 /** @AUTHOR Kenneth Adair
 *   Given a buffer of a GET request from CURL this retrieves the name of the file.  
 */
-string getFilenameFromUri(unsigned char * buf)
+string getFilenameFromUri(unsigned char buf[])
 {
-
+    cout << "getFilenameFromUri() method called" << endl;
+    cout << "initializing an empty char array called filename with a size of " << FILENAME_SIZE << endl;
     char filename[FILENAME_SIZE];
     int start, end, i;
     //Picked 4 beccause if it's a GET request then GET and a space eat up first 4 spots, index 4 should be a /
     start = end = 4;
+
+    cout << "Looping to the end of the filename" << endl;
     //Loop to the end of the filename by checking for spaces.
     while(((char)buf[end]) != ' ')
         end++;
+    cout << "The filename ends at the array index " << end << endl;
 
+    cout << "Starting the ghetto loop to move characters from the buffer to my filename string." << endl;
     //Moves all the characters in the filename into a new array from the buffer
     for(i = start; i < end; i++)
         filename[i - start] = (char) buf[i];
 
+    cout << "Starting the second ghetto loop to shift all the characters by one." << endl;
     /** FIX LATER
     *   Awkwardly solves the problem that preceding code has a "\" which prevents my filename from being right.
     *   This loop literally just removes the "\" from the filename.
@@ -62,9 +67,20 @@ string getFilenameFromUri(unsigned char * buf)
     for(i = start; i < end - 1; i++)
         filename[i - start] = filename[i - start + 1];
 
+    cout << "Making the last character a null terminator" << endl;
     //Put a null terminator at the end of the string and then return it
     filename[end - start - 1] = '\0';
-    return filename;
+    cout << "The contents of the character array are: ";
+    for(int i = 0; i < end - start; i++)
+        cout << filename[i];
+    cout << endl;
+    cout << "Casting the character array to a string." << endl;
+/********* Program crashes when I cast from char array to string. *******/
+/************************************************************************/
+    string myFile(filename);
+/************************************************************************/
+    cout << "Returning the string \"" << myFile << "\"";
+    return myFile;
 }
 /** @AUTHOR Kenneth Adair
 *   This method displays the contents of a file out to a user 
@@ -72,17 +88,20 @@ string getFilenameFromUri(unsigned char * buf)
 */
 void returnFile(int out, string filename)
 {
+    cout << "returnFile() method called" << endl;
+    cout << "char buff[FILE_CONTENTS_SIZE] array initialized to empty." << endl;
     unsigned char buff[FILE_CONTENTS_SIZE]={0};
     int count;
+    cout << "File " << filename << " opened"  << endl;
     FILE *fp = fopen(filename.c_str(), "rb");      
     if(fp==NULL)
     {
         printf("File open error");
         return;   
     }
+    cout << "Filename wasn't null." << endl;
     int nread = fread(buff, 1, FILE_CONTENTS_SIZE, fp);
     printf("Bytes read %d \n", nread);
-
 
     /* If read was success, send data. */
     if(nread > 0)
@@ -107,10 +126,12 @@ void returnFile(int out, string filename)
 *   then if it is calls returnFile to satisfy the request.  Otherwise do nothing.
 */
 void myService(int in, int out){
+    cout << "myService() method called" << endl;
     unsigned char buf[1024] = "0x00";
     int count;
+    cout << "Counting the length of the buffer" << endl;
     count = read(in, buf, 1024);
-    //write(out, buf, count);   //This is how we echo back the request that was sent
+    write(out, buf, count);   //This is how we echo back the request that was sent
 
     if(isGetRequest(buf)){
         printf("This is a GET request\n");
