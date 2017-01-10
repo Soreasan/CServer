@@ -39,7 +39,7 @@ bool isGetRequest(unsigned char *  buf)
 /** @AUTHOR Kenneth Adair
 *   Given a buffer of a GET request from CURL this retrieves the name of the file.  
 */
-string getFilenameFromUri(unsigned char buf[])
+string getFilenameFromUri(unsigned char * buf)
 {
     cout << "getFilenameFromUri() method called" << endl;
     cout << "initializing an empty char array called filename with a size of " << FILENAME_SIZE << endl;
