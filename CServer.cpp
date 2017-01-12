@@ -11,18 +11,16 @@
 */
 
 
-//Default networking stuff from the C version of this server.
+
 #include <netinet/in.h>
 #include <netdb.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-//Stuff needed for c code to work in a c++ file.
 #include <cstring>
 #include <unistd.h>
-#include <string>
+#include <string.h>
 
-//C++ Default stuff
 #include <iostream>
 using namespace std;
 
@@ -32,9 +30,11 @@ using namespace std;
 *   Given a buffer this determines if it's a GET request by checking
 *   the first 3 letters of the buffer.
 */
-bool isGetRequest(unsigned char buf[])
+bool isGetRequest(const char* buf, int size)
 {
-     return (((char) buf[0]) == 'G' && ((char) buf[1]) == 'E' && ((char) buf[2]) == 'T');
+    if(strncmp(buf, "GET", (size < 3) ? size: 3) == 0)
+        return true;
+    return false;
 }
 
 /** @AUTHOR Kenneth Adair
@@ -112,7 +112,7 @@ void myService(int in, int out){
     count = read(in, buf, 1024);
     //write(out, buf, count);   //This is how we echo back the request that was sent
 
-    if(isGetRequest(buf)){
+    if(isGetRequest(reinterpret_cast<const char*>(buf), count)){
         printf("This is a GET request\n");
         cout << "Filename is: " << webpageName(buf) << endl;
         returnFile(in, out, webpageName(buf));
