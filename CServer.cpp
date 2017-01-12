@@ -34,14 +34,20 @@ bool isGetRequest(unsigned char* buf, int size)
 /** @AUTHOR Kenneth Adair
 *   Given a buffer of a GET request from CURL this retrieves the name of the file.  
 */
-string webpageName(unsigned char* buf, int size)
+string getFilenameFromUri(unsigned char* buf, int size)
 {
     string filename;
+    /*  Since this method isn't called unless the first 3 letters are GET, 
+     *  the filename starts at index 4.  This method loops through the buffer
+     *  and searches for a space which indicates it's the end of a filename.
+     */
     for(int i = 4; i < size; i++){
+        //Once we find a space we null terminate the string so it can be used as a C string and exit.
         if((char)buf[i + 1]== ' '){
             filename.push_back('\0');
             break;
         }
+        //Append a character from the buffer to our string.  
         filename.push_back(buf[i + 1]);
     }
     return filename;
@@ -52,37 +58,35 @@ string webpageName(unsigned char* buf, int size)
 */
 void returnFile(int in, int out, string filename)
 {
-        unsigned char buff[65535]={0};
-        int count;
-        FILE *fp = fopen(filename.c_str(), "rb");      
-            if(fp==NULL)
-            {
-                    printf("File open error");
-                    return;   
-            }
-            int nread = fread(buff,1,65535,fp);
-            printf("Bytes read %d \n", nread);
+    unsigned char buff[65535]={0};
+    int count;
+    FILE *fp = fopen(filename.c_str(), "rb");      
+    if(fp==NULL)
+    {
+        printf("File open error");
+        return;   
+    }
+    int nread = fread(buff,1,65535,fp);
+    printf("Bytes read %d \n", nread);
 
+    /* If read was success, send data. */
+    if(nread > 0)
+    {
+        printf("Sending \n");
+        write(out, buff, nread);
+    }
 
-            /* If read was success, send data. */
-            if(nread > 0)
-            {
-                    printf("Sending \n");
-                    write(out, buff, nread);
-            }
-
-            /*
-             * There is something tricky going on with read .. 
-             * Either there was error, or we reached end of file.
-             */
-    
-            if (nread < 65535)
-            {
-                if (feof(fp))
-                    printf("End of file\n");
-                if (ferror(fp))
-                    printf("Error reading\n");
-            }
+    /*
+     * There is something tricky going on with read .. 
+     * Either there was error, or we reached end of file.
+     */
+    if (nread < 65535)
+    {
+        if (feof(fp))
+            printf("End of file\n");
+        if (ferror(fp))
+            printf("Error reading\n");
+    }
 }
 
 //this just echoes whatever it received.  Used for testing
@@ -94,8 +98,8 @@ void myService(int in, int out){
 
     if(isGetRequest(buf, count)){
         printf("This is a GET request\n");
-        cout << "Filename is: " << webpageName(buf, count) << endl;
-        returnFile(in, out, webpageName(buf, count));
+        cout << "Filename is: " << getFilenameFromUri(buf, count) << endl;
+        returnFile(in, out, getFilenameFromUri(buf, count));
      }else{
         printf("Not a GET request\n");
      }
