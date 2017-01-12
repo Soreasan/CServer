@@ -9,61 +9,41 @@
 *   curl localhost:1067/index.html
 *   And then the server will display the contents of the index.html file to the user.
 */
-
-
-
 #include <netinet/in.h>
 #include <netdb.h>
 #include <stdlib.h>
 #include <stdio.h>
-
 #include <cstring>
 #include <unistd.h>
 #include <string.h>
-
 #include <iostream>
 using namespace std;
 
-#define SERVER_PORT 1067
+const int SERVER_PORT = 1067;
+const int FILENAME_MAX_SIZE = 255;
 
 /** @AUTHOR Kenneth Adair
 *   Given a buffer this determines if it's a GET request by checking
 *   the first 3 letters of the buffer.
 */
-bool isGetRequest(const char* buf, int size)
+bool isGetRequest(unsigned char* buf, int size)
 {
-    if(strncmp(buf, "GET", (size < 3) ? size: 3) == 0)
-        return true;
-    return false;
+    return (strncmp(reinterpret_cast<const char*>(buf), "GET", (size < 3) ? size : 3) == 0);
 }
 
 /** @AUTHOR Kenneth Adair
 *   Given a buffer of a GET request from CURL this retrieves the name of the file.  
 */
-string webpageName(unsigned char buf[])
+string webpageName(unsigned char* buf, int size)
 {
-    //Arbitrary filename size
-    char filename[255];
-    int start, end, i;
-    //Picked 4 beccause if it's a GET request then GET and a space eat up first 4 spots, index 4 should be a /
-    start = end = 4;
-    //Loop to the end of the filename by checking for spaces.
-    while(((char)buf[end]) != ' ')
-        end++;
-
-    //Moves all the characters in the filename into a new array from the buffer
-    for(i = start; i < end; i++)
-        filename[i - start] = (char) buf[i];
-
-    /** FIX LATER
-    *   Awkwardly solves the problem that preceding code has a "\" which prevents my filename from being right.
-    *   This loop literally just removes the "\" from the filename.
-    */
-    for(i = start; i < end - 1; i++)
-        filename[i - start] = filename[i - start + 1];
-
-    //Put a null terminator at the end of the string and then return it
-    filename[end - start - 1] = '\0';
+    string filename;
+    for(int i = 4; i < size; i++){
+        if((char)buf[i + 1]== ' '){
+            filename.push_back('\0');
+            break;
+        }
+        filename.push_back(buf[i + 1]);
+    }
     return filename;
 }
 /** @AUTHOR Kenneth Adair
@@ -112,10 +92,10 @@ void myService(int in, int out){
     count = read(in, buf, 1024);
     //write(out, buf, count);   //This is how we echo back the request that was sent
 
-    if(isGetRequest(reinterpret_cast<const char*>(buf), count)){
+    if(isGetRequest(buf, count)){
         printf("This is a GET request\n");
-        cout << "Filename is: " << webpageName(buf) << endl;
-        returnFile(in, out, webpageName(buf));
+        cout << "Filename is: " << webpageName(buf, count) << endl;
+        returnFile(in, out, webpageName(buf, count));
      }else{
         printf("Not a GET request\n");
      }
