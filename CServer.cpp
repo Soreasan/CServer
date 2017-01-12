@@ -34,26 +34,7 @@ bool isGetRequest(unsigned char* buf, int size)
 /** @AUTHOR Kenneth Adair
 *   Given a buffer of a GET request from CURL this retrieves the name of the file.  
 */
-string getFilenameFromUri(unsigned char* buf, int size)
-{
-    string filename;
-    /*  Since this method isn't called unless the first 3 letters are GET, 
-     *  the filename starts at index 4.  This method loops through the buffer
-     *  and searches for a space which indicates it's the end of a filename.
-     */
-    for(int i = 4; i < size; i++){
-        //Once we find a space we null terminate the string so it can be used as a C string and exit.
-        if((char)buf[i + 1]== ' '){
-            filename.push_back('\0');
-            break;
-        }
-        //Append a character from the buffer to our string.  
-        filename.push_back(buf[i + 1]);
-    }
-    return filename;
-}
-
-void getFilenameFromUri2(unsigned char* buf, unsigned char* filename, int size)
+void getFilenameFromUri(unsigned char* buf, unsigned char* filename, int size)
 {
     for(int i = 4; i < size; i++){
         if((char)buf[i + 1] == ' '){
@@ -68,40 +49,7 @@ void getFilenameFromUri2(unsigned char* buf, unsigned char* filename, int size)
 *   This method writes the contents of a file out
 *   up to 65535 bytes big.  
 */
-void returnFile(int in, int out, string filename)
-{
-    unsigned char buff[65535]={0};
-    int count;
-    FILE *fp = fopen(filename.c_str(), "rb");      
-    if(fp==NULL)
-    {
-        printf("File open error");
-        return;   
-    }
-    int nread = fread(buff,1,65535,fp);
-    printf("Bytes read %d \n", nread);
-
-    /* If read was success, send data. */
-    if(nread > 0)
-    {
-        printf("Sending \n");
-        write(out, buff, nread);
-    }
-
-    /*
-     * There is something tricky going on with read .. 
-     * Either there was error, or we reached end of file.
-     */
-    if (nread < 65535)
-    {
-        if (feof(fp))
-            printf("End of file\n");
-        if (ferror(fp))
-            printf("Error reading\n");
-    }
-}
-
-void returnFile2(int in, int out, unsigned char* filename)
+void returnFile(int in, int out, unsigned char* filename)
 {
     unsigned char buff[65535]={0};
     int count;
@@ -136,23 +84,7 @@ void returnFile2(int in, int out, unsigned char* filename)
     }
 }
 
-//this just echoes whatever it received.  Used for testing
-void myService(int in, int out){
-    unsigned char buf[1024];
-    int count;
-    count = read(in, buf, 1024);
-    //write(out, buf, count);   //This is how we echo back the request that was sent
-
-    if(isGetRequest(buf, count)){
-        printf("This is a GET request\n");
-        cout << "Filename is: " << getFilenameFromUri(buf, count) << endl;
-        returnFile(in, out, getFilenameFromUri(buf, count));
-     }else{
-        printf("Not a GET request\n");
-     }
-}
-
-void myService2(int in, int out)
+void myService(int in, int out)
 {
     unsigned char buf[1024];
     unsigned char filename[1024];
@@ -160,9 +92,9 @@ void myService2(int in, int out)
     count = read(in, buf, 1024);
     if(isGetRequest(buf, count)){
         printf("This is a GET request\n");
-        getFilenameFromUri2(buf, filename, count);
+        getFilenameFromUri(buf, filename, count);
         cout << "Filename is: " << filename << endl;
-        returnFile2(in, out, filename);
+        returnFile(in, out, filename);
     }
 }
 
@@ -185,7 +117,7 @@ int main()
         client_len = sizeof(client);
         fd = accept(sock, (struct sockaddr *)&client, (socklen_t*)  &client_len);
         printf("got connection\n");
-        myService2(fd, fd);        
+        myService(fd, fd);        
         close(fd);
     }
 
