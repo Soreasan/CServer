@@ -7,7 +7,7 @@
 *   Successfully returns the contents of a file from a CURL GET request
 *   After compiling and running this program, in a seperate window type:
 *   curl localhost:1067/index.html
-*   And then the server will display the contents of the index.html file to the user.
+*   And then the server will display the contents of the requested file to the user.
 */
 #include <netinet/in.h>
 #include <netdb.h>
@@ -20,7 +20,9 @@
 using namespace std;
 
 const int SERVER_PORT = 1067;
-const int FILENAME_MAX_SIZE = 255;
+const int FILENAME_MAX_SIZE = 256;
+const int FILENAME_BUFFER_SIZE = 1024;
+const int MAX_FILE_SIZE = 1048576;      //1 MiB, larger sizes such as 10 MiB cause segmentation faults.
 
 /** @AUTHOR Kenneth Adair
 *   Given a buffer this determines if it's a GET request by checking
@@ -46,12 +48,11 @@ void getFilenameFromUri(unsigned char* buf, unsigned char* filename, int size)
 }
 
 /** @AUTHOR Kenneth Adair
-*   This method writes the contents of a file out
-*   up to 65535 bytes big.  
+*   This method writes the contents of a file to an open file descriptor.
 */
-void returnFile(int in, int out, unsigned char* filename)
+void returnFile(int out, unsigned char* filename)
 {
-    unsigned char buff[65535]={0};
+    unsigned char buff[MAX_FILE_SIZE]={0};
     int count;
     FILE *fp = fopen(reinterpret_cast<const char*>(filename), "rb");      
     if(fp==NULL)
@@ -61,7 +62,7 @@ void returnFile(int in, int out, unsigned char* filename)
     }else{
         printf("There is a filename and it's %s\n", filename);
     }
-    int nread = fread(buff,1,65535,fp);
+    int nread = fread(buff,1,MAX_FILE_SIZE,fp);
     printf("Bytes read %d \n", nread);
 
     /* If read was success, send data. */
@@ -75,7 +76,7 @@ void returnFile(int in, int out, unsigned char* filename)
      * There is something tricky going on with read .. 
      * Either there was error, or we reached end of file.
      */
-    if (nread < 65535)
+    if (nread < MAX_FILE_SIZE)
     {
         if (feof(fp))
             printf("End of file\n");
@@ -86,15 +87,15 @@ void returnFile(int in, int out, unsigned char* filename)
 
 void myService(int in, int out)
 {
-    unsigned char buf[1024];
-    unsigned char filename[1024];
+    unsigned char buf[FILENAME_BUFFER_SIZE];
+    unsigned char filename[FILENAME_BUFFER_SIZE];
     int count;
     count = read(in, buf, 1024);
     if(isGetRequest(buf, count)){
         printf("This is a GET request\n");
         getFilenameFromUri(buf, filename, count);
         cout << "Filename is: " << filename << endl;
-        returnFile(in, out, filename);
+        returnFile(out, filename);
     }
 }
 
