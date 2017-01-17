@@ -38,12 +38,14 @@ bool isGetRequest(unsigned char* buf, int size)
 */
 void getFilenameFromUri(unsigned char* buf, unsigned char* filename, int size)
 {
-    for(int i = 4; i < size; i++){
+    //startingIndex is the 4th index, assuming that the first 4 symbols are "GET "
+    int startingIndex = 4;
+    for(int i = startingIndex; i < size; i++){
         if((char)buf[i + 1] == ' '){
-            filename[i - 4] = '\0';
+            filename[i - startingIndex] = '\0';
             break;
         }
-        filename[i - 4] = buf[i + 1];
+        filename[i - startingIndex] = buf[i + 1];
     }
 }
 
