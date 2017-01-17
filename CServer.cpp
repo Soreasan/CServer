@@ -92,7 +92,7 @@ void myService(int in, int out)
     unsigned char buf[FILENAME_BUFFER_SIZE];
     unsigned char filename[FILENAME_BUFFER_SIZE];
     int count;
-    count = read(in, buf, 1024);
+    count = read(in, buf, FILENAME_BUFFER_SIZE);
     if(isGetRequest(buf, count)){
         printf("This is a GET request\n");
         getFilenameFromUri(buf, filename, count);
