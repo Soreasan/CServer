@@ -19,7 +19,7 @@
 #include <iostream>
 using namespace std;
 
-const int SERVER_PORT = 1067;
+int SERVER_PORT = 1067;
 const int FILENAME_MAX_SIZE = 256;
 const int FILENAME_BUFFER_SIZE = 1024;
 const int MAX_FILE_SIZE = 1048576;      //1 MiB, larger sizes such as 10 MiB cause segmentation faults.
@@ -101,8 +101,20 @@ void myService(int in, int out)
     }
 }
 
-int main()
+/** @AUTHOR Kenneth Adair
+*   This method checks for commandline arguments and if the user puts a port number it changes the port.
+*   Otherwise it uses the default port number.
+*/
+void setPort(int argc, char *argv[])
 {
+    //If there is a commandline argument and it's a number set it to that number, otherwise use default value
+	SERVER_PORT = (argc == 2 && strtol(argv[1], NULL, 10) != 0) ? strtol(argv[1], NULL, 10) : SERVER_PORT;
+	cout << "Will listen on port " << SERVER_PORT << endl;
+}
+
+int main(int argc, char *argv[])
+{
+	setPort(argc, argv);
     //Boilerplate networking code
     int sock, fd, client_len;
     struct sockaddr_in server, client;
