@@ -124,7 +124,10 @@ int main(int argc, char *argv[])
     server.sin_addr.s_addr = htonl(INADDR_ANY);
     server.sin_port = htons(SERVER_PORT);
     bind(sock, (struct sockaddr *)&server, sizeof(server));
-    listen(sock, 5);
+    if(listen(sock, 5) == -1){
+        printf("Failed to listen\n");
+        return -1;
+    }
     printf("listening...\n");
 
     //Wait for users to connect, then send them the contents of files if they send a GET request
