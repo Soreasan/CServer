@@ -38,7 +38,7 @@ void returnFile(int in, int out)
         	if(fp==NULL)
         	{
             		printf("File open error");
-            		return 1;   
+            		return;   
         	}
 		/* First read file in chunks of 256 bytes */
         	//unsigned char buff[256]={0};

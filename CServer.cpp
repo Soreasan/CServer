@@ -150,11 +150,14 @@ int main(int argc, char *argv[])
 
     //Wait for users to connect, then send them the contents of files if they send a GET request
     while(1){
-        client_len = sizeof(client);
-        fd = accept(sock, (struct sockaddr *)&client, (socklen_t*)  &client_len);
-        printf("got connection\n");
-        myService(fd, fd);        
-        close(fd);
+        try
+        {
+            client_len = sizeof(client);
+            fd = accept(sock, (struct sockaddr *)&client, (socklen_t*)  &client_len);
+            printf("got connection\n");
+            myService(fd, fd);        
+            close(fd);
+        }
     }
 
     return 0;
