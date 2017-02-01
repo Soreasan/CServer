@@ -142,7 +142,8 @@ int main(int argc, char *argv[])
     server.sin_addr.s_addr = htonl(INADDR_ANY);
     server.sin_port = htons(SERVER_PORT);
     bind(sock, (struct sockaddr *)&server, sizeof(server));
-    if(listen(sock, 5) == -1){
+    if(listen(sock, 5) == -1)
+    {
         printf("Failed to listen\n");
         return -1;
     }
@@ -157,6 +158,10 @@ int main(int argc, char *argv[])
             printf("got connection\n");
             myService(fd, fd);        
             close(fd);
+        }
+        catch(exception& e)
+        {
+            cout << e.what() << endl;
         }
     }
 
