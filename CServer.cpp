@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <iostream>
+//#include <string>
 using namespace std;
 
 int SERVER_PORT = 1067;
@@ -31,6 +32,23 @@ const int MAX_FILE_SIZE = 1048576;      //1 MiB, larger sizes such as 10 MiB cau
 bool isGetRequest(unsigned char* buf, int size)
 {
     return (strncmp(reinterpret_cast<const char*>(buf), "GET", (size < 3) ? size : 3) == 0);
+}
+
+/** @AUTHOR Kenneth Adair
+*   Alternative approach to check if there's a GET request, doesn't only check first three characters
+*/
+bool isGetRequest2(unsigned char* buf, int size)
+{
+    // Cast the buf to a c++ string
+    // http://stackoverflow.com/questions/1195675/convert-a-char-to-stdstring
+    string buff(reinterpret_cast<const char*>(buf));
+    // Check if the string contains the word GET 
+    // http://stackoverflow.com/questions/2340281/check-if-a-string-contains-a-string-in-c
+    if(buff.find("GET") != std::string::npos){
+        return true;
+    }
+    return false;
+
 }
 
 /** @AUTHOR Kenneth Adair
@@ -93,7 +111,7 @@ void myService(int in, int out)
     unsigned char filename[FILENAME_BUFFER_SIZE];
     int count;
     count = read(in, buf, FILENAME_BUFFER_SIZE);
-    if(isGetRequest(buf, count)){
+    if(isGetRequest2(buf, count)){
         printf("This is a GET request\n");
         getFilenameFromUri(buf, filename, count);
         cout << "Filename is: " << filename << endl;
