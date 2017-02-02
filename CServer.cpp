@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <iostream>
+#include <map>
 //#include <string>
 using namespace std;
 
@@ -49,6 +50,40 @@ bool isGetRequest2(unsigned char* buf, int size)
     }
     return false;
 
+}
+
+/** @AUTHOR Kenneth Adair
+*   Goes through the buffer and fills the hash table with all the components of our buffer
+*/
+void parseBuffer(unsigned char* buf, int size, map<string, string>* bufferComponents)
+{
+    //i will be used to track which character we're on
+    int i = 0;
+    //Casting the buffer to a string to make it easier to work with
+    string buff(reinterpret_cast<const char*>(buf));
+    //First we'll try to find the type of request
+    for(; i < buff.length(); i++){
+        if(buff[i] == ' '){
+            bufferComponents->insert(pair<string, string>("RequestType", buff.substr(0, i)));
+            cout << "The request type is: " << bufferComponents->find("RequestType")->second << endl;
+            break;
+        }
+    }
+    //At this point i should be at the square with the space so we should be able to search for the URI next
+    //This moves us to the start of the URI
+    for(; i < buff.length(); i++){
+        if(buff[i] == '/')
+            break;
+    }
+    //For the substring method we'll track where the URI starts.
+    int startOfURI = i;
+    for(; i < buff.length(); i++){
+        if(buff[i] == ' ' || '\n'){
+            bufferComponents->insert(pair<string, string>("URI", buff.substr(startOfURI, i)));
+            cout << "The URI is: " << bufferComponents->find("URI")->second << endl;
+            break;
+        }
+    }
 }
 
 /** @AUTHOR Kenneth Adair
@@ -105,12 +140,15 @@ void returnFile(int out, unsigned char* filename)
     }
 }
 
-void myService(int in, int out)
+void myService(int in, int out, map<string, string>* bufferComponents)
 {
     unsigned char buf[FILENAME_BUFFER_SIZE];
     unsigned char filename[FILENAME_BUFFER_SIZE];
     int count;
     count = read(in, buf, FILENAME_BUFFER_SIZE);
+    /********************************/
+    //parseBuffer(buf, count, bufferComponents);
+    /********************************/
     if(isGetRequest2(buf, count)){
         printf("This is a GET request\n");
         getFilenameFromUri(buf, filename, count);
@@ -156,7 +194,8 @@ int main(int argc, char *argv[])
             client_len = sizeof(client);
             fd = accept(sock, (struct sockaddr *)&client, (socklen_t*)  &client_len);
             printf("got connection\n");
-            myService(fd, fd);        
+            map<string, string> myMap;
+            myService(fd, fd, &myMap);        
             close(fd);
         }
         catch(exception& e)
