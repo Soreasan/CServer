@@ -78,8 +78,8 @@ void parseBuffer(unsigned char* buf, int size, map<string, string>* bufferCompon
     //For the substring method we'll track where the URI starts.
     int startOfURI = i;
     for(; i < buff.length(); i++){
-        if(buff[i] == ' ' || '\n'){
-            bufferComponents->insert(pair<string, string>("URI", buff.substr(startOfURI, i)));
+        if(buff[i] == ' ' || buff[i] == '\n'){
+            bufferComponents->insert(pair<string, string>("URI", buff.substr(startOfURI, i - startOfURI + 1)));
             cout << "The URI is: " << bufferComponents->find("URI")->second << endl;
             break;
         }
@@ -147,7 +147,7 @@ void myService(int in, int out, map<string, string>* bufferComponents)
     int count;
     count = read(in, buf, FILENAME_BUFFER_SIZE);
     /********************************/
-    //parseBuffer(buf, count, bufferComponents);
+    parseBuffer(buf, count, bufferComponents);
     /********************************/
     if(isGetRequest2(buf, count)){
         printf("This is a GET request\n");
