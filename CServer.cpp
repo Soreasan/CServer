@@ -100,18 +100,21 @@ void parseBuffer(unsigned char* buf, int size, map<string, string>* bufferCompon
     }
 }
 
-void getRequestType(unsigned char* buf, int size, map<string, string>* bufferComponents)
+void getRequestType(unsigned char* buf, int* size, map<string, string>* bufferComponents)
 {
-    char* requestType = new char[size];
+    char* requestType = new char[*size];
     //First we'll try to find the type of request
-    for(int i = 0; i < size; i++){
+    for(int i = 0; i < *size; i++){
         if(buf[i] == ' '){
             printf("Adding null terminator and finishing string.");
             requestType[i] = '\0';
             string request(requestType);
             bufferComponents->insert(pair<string, string>("RequestTypez", request));
             cout << "The request type is: " << bufferComponents->find("RequestTypez")->second << endl;
-            //buf = &buf[i];
+            buf = &buf[i];
+            cout << "size was " << *size << endl;
+            *size = *size - i;
+            cout << "size is now " << *size << endl;
             break;
         }else{
             printf("Adding %c to the array\n", buf[i]);
@@ -141,7 +144,7 @@ void parseHeaders(unsigned char* buf, int size, map<string, string>* bufferCompo
 //first we need to identify what the request type is:
 void parseBuffer2(unsigned char* buf, int size, map<string, string>* bufferComponents)
 {
-    getRequestType(buf, size, bufferComponents);
+    getRequestType(buf, &size, bufferComponents);
     parseURI(buf, size, bufferComponents);
     getHTTPVersion(buf, size, bufferComponents);
     parseHeaders(buf, size, bufferComponents);
@@ -209,12 +212,15 @@ void myService(int in, int out, map<string, string>* bufferComponents)
     count = read(in, buf, FILENAME_BUFFER_SIZE);
     /********************************/
     parseBuffer(buf, count, bufferComponents);
-    getRequestType(buf, count, bufferComponents);
     /********************************/
     if(isGetRequest2(buf, count)){
         printf("This is a GET request\n");
         getFilenameFromUri(buf, filename, count);
         cout << "Filename is: " << filename << endl;
+        //NO
+        getRequestType(buf, &count, bufferComponents);
+        //NO
+
         returnFile(out, filename);
     }
 }
