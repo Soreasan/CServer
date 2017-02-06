@@ -52,6 +52,20 @@ bool isGetRequest2(unsigned char* buf, int size)
 
 }
 
+/*
+To parse a buffer there will be 4 stages:
+GET /index.html HTTP/1.1
+[thingy]: thingy
+[thingy]: thingy
+\n
+So I need something to parse the request type, something to parse the URI, check if it says HTTP/1.1 or 
+is empty (which means it's HTTP/1.0), then something to parse the attributes like content-type.  Once
+I hit two newlines that means the request is done.  We need to consume it and move the stuff
+
+When I send a response back the content-length will be sizeof(file) and doesn't include the size of the header
+*/
+
+
 /** @AUTHOR Kenneth Adair
 *   Goes through the buffer and fills the hash table with all the components of our buffer
 */
