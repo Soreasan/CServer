@@ -219,6 +219,7 @@ void myService(int in, int out, map<string, string>* bufferComponents)
         cout << "Filename is: " << filename << endl;
         //NO
         getRequestType(buf, &count, bufferComponents);
+        cout << "MOMENT OF TRUTH: SIZE IS: " << count << endl;
         //NO
 
         returnFile(out, filename);
