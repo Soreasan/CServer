@@ -100,6 +100,53 @@ void parseBuffer(unsigned char* buf, int size, map<string, string>* bufferCompon
     }
 }
 
+void getRequestType(unsigned char* buf, int size, map<string, string>* bufferComponents)
+{
+    char* requestType = new char[size];
+    //First we'll try to find the type of request
+    for(int i = 0; i < size; i++){
+        if(buf[i] == ' '){
+            printf("Adding null terminator and finishing string.");
+            requestType[i] = '\0';
+            string request(requestType);
+            bufferComponents->insert(pair<string, string>("RequestTypez", request));
+            cout << "The request type is: " << bufferComponents->find("RequestTypez")->second << endl;
+            //buf = &buf[i];
+            break;
+        }else{
+            printf("Adding %c to the array\n", buf[i]);
+            requestType[i] = buf[i];
+        }
+    }
+}
+
+void parseURI(unsigned char* buf, int size, map<string, string>* bufferComponents)
+{
+
+}
+
+void getHTTPVersion(unsigned char* buf, int size, map<string, string>* bufferComponents)
+{
+
+}
+
+void parseHeaders(unsigned char* buf, int size, map<string, string>* bufferComponents)
+{
+
+}
+
+/** @AUTHOR Kenneth Adair
+*   Goes through the buffer and fills the hash table with all the components of our buffer
+*/
+//first we need to identify what the request type is:
+void parseBuffer2(unsigned char* buf, int size, map<string, string>* bufferComponents)
+{
+    getRequestType(buf, size, bufferComponents);
+    parseURI(buf, size, bufferComponents);
+    getHTTPVersion(buf, size, bufferComponents);
+    parseHeaders(buf, size, bufferComponents);
+}
+
 /** @AUTHOR Kenneth Adair
 *   Given a buffer of a GET request from CURL this retrieves the name of the file.  
 */
@@ -162,6 +209,7 @@ void myService(int in, int out, map<string, string>* bufferComponents)
     count = read(in, buf, FILENAME_BUFFER_SIZE);
     /********************************/
     parseBuffer(buf, count, bufferComponents);
+    getRequestType(buf, count, bufferComponents);
     /********************************/
     if(isGetRequest2(buf, count)){
         printf("This is a GET request\n");
