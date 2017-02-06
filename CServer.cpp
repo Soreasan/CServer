@@ -111,21 +111,54 @@ void getRequestType(unsigned char* buf, int* size, map<string, string>* bufferCo
             string request(requestType);
             bufferComponents->insert(pair<string, string>("RequestTypez", request));
             cout << "The request type is: " << bufferComponents->find("RequestTypez")->second << endl;
+            cout << "buffer was " << buf[0] << endl;
             buf = &buf[i];
+            cout << "buffer is now " << buf[0] << endl;
             cout << "size was " << *size << endl;
             *size = *size - i;
             cout << "size is now " << *size << endl;
             break;
         }else{
-            printf("Adding %c to the array\n", buf[i]);
+            printf("Adding %c to the Request Type\n", buf[i]);
             requestType[i] = buf[i];
         }
     }
 }
 
-void parseURI(unsigned char* buf, int size, map<string, string>* bufferComponents)
+void parseURI(unsigned char* buf, int* size, map<string, string>* bufferComponents)
 {
+    printf("Starting parseURI with the buffer starting at %c and the size is: %i", buf[0], *size);
+    //Loop to the URI
+    for(int i = 0; i < *size; i++){
+        //Search for a forward slash which indicates the start of a URI
+        if(buf[i] == '\\'){
+            buf = buf + i;
+            *size = *size - i;
+            break;
+        }
+    }
 
+    char* uri = new char[*size];
+
+
+    //Now that we're at the start of a URI we loop through it to retrieve the URI
+    for(int i = 0; i < *size; i++){
+        if(buf[i] == ' ' || buf[i] == '\n'){
+            printf("Adding null terminator and finishing uri.");
+            uri[i] = '\0';
+            string myUri(uri);
+            bufferComponents->insert(pair<string, string>("URI", myUri));
+            cout << "The URI is: " << bufferComponents->find("URI")->second << endl;
+            buf = buf + i;
+            cout << "size was " << *size << endl;
+            *size = *size - i;
+            cout << "size is now " << *size << endl;
+            break;
+        }else{
+            printf("Adding %c to the URI\n", buf[i]);
+            uri[i] = buf[i];
+        }
+    }
 }
 
 void getHTTPVersion(unsigned char* buf, int size, map<string, string>* bufferComponents)
@@ -145,7 +178,7 @@ void parseHeaders(unsigned char* buf, int size, map<string, string>* bufferCompo
 void parseBuffer2(unsigned char* buf, int size, map<string, string>* bufferComponents)
 {
     getRequestType(buf, &size, bufferComponents);
-    parseURI(buf, size, bufferComponents);
+    parseURI(buf, &size, bufferComponents);
     getHTTPVersion(buf, size, bufferComponents);
     parseHeaders(buf, size, bufferComponents);
 }
@@ -219,6 +252,7 @@ void myService(int in, int out, map<string, string>* bufferComponents)
         cout << "Filename is: " << filename << endl;
         //NO
         getRequestType(buf, &count, bufferComponents);
+        parseURI(buf, &count, bufferComponents);
         cout << "MOMENT OF TRUTH: SIZE IS: " << count << endl;
         //NO
 
