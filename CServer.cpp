@@ -258,10 +258,12 @@ unsigned char* parseHeaders(unsigned char* buf, int* size, map<string, string>* 
     char* value = new char[*size];
 
     for(int j = 0; i < *size; i++, j++){
+        /*
         if(buf[i] == '\r'){
             cout << "Found a carriage return!  \"" << buf[i] << "\"" << endl;
         }
-        if(buf[i] == '\r' && buf[i + 1] == '\n'){
+        */
+        if(/*buf[i] == '\r' && buf[i + 1] == '\n'*/buf[i] == '\n'){
             printf("Adding null terminator and finishing this header.\n");
             value[j] = '\0';
             string myKey(key);
@@ -272,7 +274,7 @@ unsigned char* parseHeaders(unsigned char* buf, int* size, map<string, string>* 
             *size = *size - i - 1;
             cout << "size is now " << *size << endl;
             //two newlines means it's the end of the file
-            if(buf[i + 2] == '\r' && buf[i + 3] == '\n'){
+            if(/*buf[i + 2] == '\r' && buf[i + 3] == '\n'*/buf[i + 1] == '\r' && buf[i + 2] == '\n'){
                 delete[] key;
                 delete[] value;
                 //Recursively loop through until we've found everything.
