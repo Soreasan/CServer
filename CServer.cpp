@@ -93,7 +93,7 @@ void parseBuffer(unsigned char* buf, int size, map<string, string>* bufferCompon
     int startOfURI = i;
     for(; i < buff.length(); i++){
         if(buff[i] == ' ' || buff[i] == '\n'){
-            bufferComponents->insert(pair<string, string>("URI", buff.substr(startOfURI, i - startOfURI + 1)));
+            bufferComponents->insert(pair<string, string>("URI", buff.substr(startOfURI, i - startOfURI)));
             cout << "The URI is: " << bufferComponents->find("URI")->second << endl;
             break;
         }
@@ -102,6 +102,10 @@ void parseBuffer(unsigned char* buf, int size, map<string, string>* bufferCompon
 
 unsigned char* getRequestType(unsigned char* buf, int* size, map<string, string>* bufferComponents)
 {
+    string s(reinterpret_cast<const char*>(buf));
+    cout << "[getRequestType]Remaining buffer is: " << endl;
+    cout << s << endl;
+
     char* requestType = new char[*size];
     int i = 0;
     //First we'll try to find the type of request
@@ -112,11 +116,11 @@ unsigned char* getRequestType(unsigned char* buf, int* size, map<string, string>
             string request(requestType);
             bufferComponents->insert(pair<string, string>("RequestTypez", request));
             cout << "The request type is: " << bufferComponents->find("RequestTypez")->second << endl;
-            cout << "buffer was " << buf[0] << buf[1] << buf[2] << " (If this works it should say \"GET\"" << endl;
+            cout << "buffer was " << buf[0] << buf[1] << buf[2] << " (If this works it should say \"GET\")" << endl;
             //*buf = buf[i];    //DOESN'T WORK
             //buf = &buf[i];    //Works but doesn't update global
             //*buf = buf[i];    //Changes the value at buf[0]
-            cout << "buffer is now " << buf[0] << buf[1] << buf[2] << buf[3] << buf[4] << buf[5] << buf[6] << buf[7] << buf[8] << buf[9] << buf[10] << buf[11] << " (If this worked it should not be GET but part of index.html" << endl;
+            //cout << "buffer is now " << buf[0] << buf[1] << buf[2] << buf[3] << buf[4] << buf[5] << buf[6] << buf[7] << buf[8] << buf[9] << buf[10] << buf[11] << " (If this worked it should not be GET but part of index.html" << endl;
             cout << "size was " << *size << endl;
             *size = *size - i;
             cout << "size is now " << *size << endl;
@@ -131,15 +135,24 @@ unsigned char* getRequestType(unsigned char* buf, int* size, map<string, string>
 
 unsigned char* parseURI(unsigned char* buf, int* size, map<string, string>* bufferComponents)
 {
+
+    string s(reinterpret_cast<const char*>(buf));
+    cout << "[parseURI] Remaining buffer is: " << endl;
+    cout << s << endl;
+
     printf("Starting parseURI with the buffer starting at %c%c%c%c%c%c%c%c%c%c%c and the size is: %i\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7], buf[8], buf[9], buf[10], *size);
     //Loop to the URI
     int i = 0;
     for(; i < *size; i++){
         //Search for a forward slash which indicates the start of a URI
-        if(buf[i] == '\\'){
+        if(buf[i] == '/'){
             //buf = buf + i;
             //*size = *size - i;
+            cout << "Found a \\ at " << i << endl;
             break;
+        }
+        else{
+            cout << "Looping over: \"" << buf[i] << "\"" << endl;
         }
     }
 
@@ -147,10 +160,10 @@ unsigned char* parseURI(unsigned char* buf, int* size, map<string, string>* buff
 
 
     //Now that we're at the start of a URI we loop through it to retrieve the URI
-    for(; i < *size; i++){
+    for(int j = 0; i < *size; i++, j++){
         if(buf[i] == ' ' || buf[i] == '\n'){
             printf("Adding null terminator and finishing uri.\n");
-            uri[i] = '\0';
+            uri[j] = '\0';
             string myUri(uri);
             bufferComponents->insert(pair<string, string>("URI", myUri));
             cout << "The URI is: " << bufferComponents->find("URI")->second << endl;
@@ -161,15 +174,56 @@ unsigned char* parseURI(unsigned char* buf, int* size, map<string, string>* buff
             break;
         }else{
             printf("Adding %c to the URI\n", buf[i]);
-            uri[i] = buf[i];
+            uri[j] = buf[i];
         }
     }
+    //prevent memory leaks
+    //delete[] uri;
     return &buf[i];
 }
 
-void getHTTPVersion(unsigned char* buf, int size, map<string, string>* bufferComponents)
+unsigned char* getHTTPVersion(unsigned char* buf, int* size, map<string, string>* bufferComponents)
 {
+    string s(reinterpret_cast<const char*>(buf));
+    cout << "[getHTTPVersion] Remaining buffer is: " << endl;
+    cout << s << endl;
 
+    int i = 0;
+    //iterate through whitespace
+    for(; i < *size; i++){
+        //If there's nothing then it's a HTTP 1.0 request
+        if(buf[i] == '\n'){
+            bufferComponents->insert(pair<string, string>("HTTPVersion", "HTTP/1.0"));
+            return &buf[i + 1];
+        }
+        //Once we've gone through the whitespace we break the loop
+        if(buf[i] != ' '){
+            cout << "\""<< buf[i] << "\"" << " is the buf[]" << endl;
+            break;
+        }
+    }
+
+    //This will be used to store the new string we're building
+    char* http = new char[*size];
+
+    for(int j = 0; i < *size; i++, j++){
+        if(buf[i] == ' ' || buf[i] == '\n'){
+            printf("Adding null terminator and finishing http version.\n");
+            http[j] = '\0';
+            string myHttp(http);
+            bufferComponents->insert(pair<string, string>("HTTPVersion", myHttp));
+            cout << "The HTTP version is: " << bufferComponents->find("HTTPVersion")->second << endl;
+            cout << "size was " << *size << endl;
+            *size = *size - i - 1;
+            cout << "size is now " << *size << endl;
+            break;
+        }else{
+            printf("Adding %c to the HTTP version\n", buf[i]);
+            http[j] = buf[i];
+        }
+    }
+    //delete[] http;
+    return &buf[i + 1];
 }
 
 void parseHeaders(unsigned char* buf, int size, map<string, string>* bufferComponents)
@@ -185,7 +239,9 @@ void parseBuffer2(unsigned char* buf, int* size, map<string, string>* bufferComp
 {
     buf = getRequestType(buf, size, bufferComponents);
     buf = parseURI(buf, size, bufferComponents);
-    //getHTTPVersion(buf, size, bufferComponents);
+    cout << "Inbetween parseURI and getHTTPVersion the buffer is: " << endl;
+    cout << buf << endl;
+    buf = getHTTPVersion(buf, size, bufferComponents);
     //parseHeaders(buf, size, bufferComponents);
 }
 
@@ -261,6 +317,12 @@ void myService(int in, int out, map<string, string>* bufferComponents)
         //parseURI(buf, &count, bufferComponents);
         parseBuffer2(buf, &count, bufferComponents);
         cout << "MOMENT OF TRUTH: SIZE IS: " << count << endl;
+        cout << "URI: \"" << bufferComponents->find("URI")->second << "\"" << endl;
+        cout << "REQUEST TYPE: \"" << bufferComponents->find("RequestTypez")->second << "\"" << endl;
+        cout << "HTTP VERSION: \"" << bufferComponents->find("HTTPVersion")->second << "\"" << endl;
+        //for(auto iterator = bufferComponents->begin(); iterator != bufferComponents->end(); iterator++){
+        //    cout << iterator->first << ": " << iterator->second << endl;
+        //}
         //NO
 
         returnFile(out, filename);
