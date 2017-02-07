@@ -318,8 +318,8 @@ void myService(int in, int out, map<string, string>* bufferComponents)
         parseBuffer2(buf, &count, bufferComponents);
         cout << "MOMENT OF TRUTH: SIZE IS: " << count << endl;
         cout << "URI: \"" << bufferComponents->find("URI")->second << "\"" << endl;
-        cout << "REQUEST TYPE: \"" << bufferComponents->find("RequestTypez")->second << "\"" << endl;
-        cout << "HTTP VERSION: \"" << bufferComponents->find("HTTPVersion")->second << "\"" << endl;
+        cout << "REQUEST TYPE: " << bufferComponents->find("RequestTypez")->second << endl;
+        cout << "HTTP VERSION: " << bufferComponents->find("HTTPVersion")->second << endl;
         //for(auto iterator = bufferComponents->begin(); iterator != bufferComponents->end(); iterator++){
         //    cout << iterator->first << ": " << iterator->second << endl;
         //}
