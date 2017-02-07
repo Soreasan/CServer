@@ -100,20 +100,23 @@ void parseBuffer(unsigned char* buf, int size, map<string, string>* bufferCompon
     }
 }
 
-void getRequestType(unsigned char* buf, int* size, map<string, string>* bufferComponents)
+unsigned char* getRequestType(unsigned char* buf, int* size, map<string, string>* bufferComponents)
 {
     char* requestType = new char[*size];
+    int i = 0;
     //First we'll try to find the type of request
-    for(int i = 0; i < *size; i++){
+    for(; i < *size; i++){
         if(buf[i] == ' '){
-            printf("Adding null terminator and finishing string.");
+            printf("Adding null terminator and finishing string.\n");
             requestType[i] = '\0';
             string request(requestType);
             bufferComponents->insert(pair<string, string>("RequestTypez", request));
             cout << "The request type is: " << bufferComponents->find("RequestTypez")->second << endl;
-            cout << "buffer was " << buf[0] << endl;
-            buf = &buf[i];
-            cout << "buffer is now " << buf[0] << endl;
+            cout << "buffer was " << buf[0] << buf[1] << buf[2] << " (If this works it should say \"GET\"" << endl;
+            //*buf = buf[i];    //DOESN'T WORK
+            //buf = &buf[i];    //Works but doesn't update global
+            //*buf = buf[i];    //Changes the value at buf[0]
+            cout << "buffer is now " << buf[0] << buf[1] << buf[2] << buf[3] << buf[4] << buf[5] << buf[6] << buf[7] << buf[8] << buf[9] << buf[10] << buf[11] << " (If this worked it should not be GET but part of index.html" << endl;
             cout << "size was " << *size << endl;
             *size = *size - i;
             cout << "size is now " << *size << endl;
@@ -123,17 +126,19 @@ void getRequestType(unsigned char* buf, int* size, map<string, string>* bufferCo
             requestType[i] = buf[i];
         }
     }
+    return &buf[i];
 }
 
-void parseURI(unsigned char* buf, int* size, map<string, string>* bufferComponents)
+unsigned char* parseURI(unsigned char* buf, int* size, map<string, string>* bufferComponents)
 {
-    printf("Starting parseURI with the buffer starting at %c and the size is: %i", buf[0], *size);
+    printf("Starting parseURI with the buffer starting at %c%c%c%c%c%c%c%c%c%c%c and the size is: %i\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7], buf[8], buf[9], buf[10], *size);
     //Loop to the URI
-    for(int i = 0; i < *size; i++){
+    int i = 0;
+    for(; i < *size; i++){
         //Search for a forward slash which indicates the start of a URI
         if(buf[i] == '\\'){
-            buf = buf + i;
-            *size = *size - i;
+            //buf = buf + i;
+            //*size = *size - i;
             break;
         }
     }
@@ -142,14 +147,14 @@ void parseURI(unsigned char* buf, int* size, map<string, string>* bufferComponen
 
 
     //Now that we're at the start of a URI we loop through it to retrieve the URI
-    for(int i = 0; i < *size; i++){
+    for(; i < *size; i++){
         if(buf[i] == ' ' || buf[i] == '\n'){
-            printf("Adding null terminator and finishing uri.");
+            printf("Adding null terminator and finishing uri.\n");
             uri[i] = '\0';
             string myUri(uri);
             bufferComponents->insert(pair<string, string>("URI", myUri));
             cout << "The URI is: " << bufferComponents->find("URI")->second << endl;
-            buf = buf + i;
+            //buf = buf + i;
             cout << "size was " << *size << endl;
             *size = *size - i;
             cout << "size is now " << *size << endl;
@@ -159,6 +164,7 @@ void parseURI(unsigned char* buf, int* size, map<string, string>* bufferComponen
             uri[i] = buf[i];
         }
     }
+    return &buf[i];
 }
 
 void getHTTPVersion(unsigned char* buf, int size, map<string, string>* bufferComponents)
@@ -175,12 +181,12 @@ void parseHeaders(unsigned char* buf, int size, map<string, string>* bufferCompo
 *   Goes through the buffer and fills the hash table with all the components of our buffer
 */
 //first we need to identify what the request type is:
-void parseBuffer2(unsigned char* buf, int size, map<string, string>* bufferComponents)
+void parseBuffer2(unsigned char* buf, int* size, map<string, string>* bufferComponents)
 {
-    getRequestType(buf, &size, bufferComponents);
-    parseURI(buf, &size, bufferComponents);
-    getHTTPVersion(buf, size, bufferComponents);
-    parseHeaders(buf, size, bufferComponents);
+    buf = getRequestType(buf, size, bufferComponents);
+    buf = parseURI(buf, size, bufferComponents);
+    //getHTTPVersion(buf, size, bufferComponents);
+    //parseHeaders(buf, size, bufferComponents);
 }
 
 /** @AUTHOR Kenneth Adair
@@ -251,8 +257,9 @@ void myService(int in, int out, map<string, string>* bufferComponents)
         getFilenameFromUri(buf, filename, count);
         cout << "Filename is: " << filename << endl;
         //NO
-        getRequestType(buf, &count, bufferComponents);
-        parseURI(buf, &count, bufferComponents);
+        //getRequestType(buf, &count, bufferComponents);
+        //parseURI(buf, &count, bufferComponents);
+        parseBuffer2(buf, &count, bufferComponents);
         cout << "MOMENT OF TRUTH: SIZE IS: " << count << endl;
         //NO
 
