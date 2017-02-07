@@ -130,6 +130,7 @@ unsigned char* getRequestType(unsigned char* buf, int* size, map<string, string>
             requestType[i] = buf[i];
         }
     }
+    delete[] requestType;
     return &buf[i];
 }
 
@@ -178,7 +179,7 @@ unsigned char* parseURI(unsigned char* buf, int* size, map<string, string>* buff
         }
     }
     //prevent memory leaks
-    //delete[] uri;
+    delete[] uri;
     return &buf[i];
 }
 
@@ -222,13 +223,72 @@ unsigned char* getHTTPVersion(unsigned char* buf, int* size, map<string, string>
             http[j] = buf[i];
         }
     }
-    //delete[] http;
+    delete[] http;
     return &buf[i + 1];
 }
 
-void parseHeaders(unsigned char* buf, int size, map<string, string>* bufferComponents)
+//We'll recursively call this method until we find two newlines.
+unsigned char* parseHeaders(unsigned char* buf, int* size, map<string, string>* bufferComponents)
 {
+    //We'll assume we're at the start of a new line.
+    string s(reinterpret_cast<const char*>(buf));
+    cout << "[parseHeaders] Remaining buffer is: " << endl;
+    cout << s << endl;
 
+    int i = 0;
+    char* key = new char[*size];
+    //iterate through until ":"
+    for(; i < *size; i++){
+        if(buf[i] == ':'){
+            key[i] = '\0';
+            break;
+        }else{
+            cout << "Adding " << buf[i] << " to the key." << endl;
+            key[i] = buf[i];
+        }
+    }
+    cout << "The key is \"" << key << "\"" << endl;
+
+    //Iterate through whitespace
+    for(; i < *size; i++){
+        if(buf[i] != ' ' && buf[i] != ':')
+            break;
+    }
+
+    char* value = new char[*size];
+
+    for(int j = 0; i < *size; i++, j++){
+        if(buf[i] == '\r'){
+            cout << "Found a carriage return!  \"" << buf[i] << "\"" << endl;
+        }
+        if(buf[i] == '\r' && buf[i + 1] == '\n'){
+            printf("Adding null terminator and finishing this header.\n");
+            value[j] = '\0';
+            string myKey(key);
+            string myValue(value);
+            bufferComponents->insert(pair<string, string>(myKey, myValue));
+            cout << "Header key is: " << myKey << " with a value of: " << bufferComponents->find(myKey)->second << endl;
+            cout << "size was " << *size << endl;
+            *size = *size - i - 1;
+            cout << "size is now " << *size << endl;
+            //two newlines means it's the end of the file
+            if(buf[i + 2] == '\r' && buf[i + 3] == '\n'){
+                delete[] key;
+                delete[] value;
+                //Recursively loop through until we've found everything.
+                //return parseHeaders(&buf[i + 1], size, bufferComponents);
+                return &buf[i];
+            }
+            break;
+        }else{
+            printf("Adding %c to the header value\n", buf[i]);
+            value[j] = buf[i];
+        }
+    }
+    delete[] key;
+    delete[] value;
+    //return &buf[i];
+    return parseHeaders(&buf[i + 1], size, bufferComponents);
 }
 
 /** @AUTHOR Kenneth Adair
@@ -242,7 +302,8 @@ void parseBuffer2(unsigned char* buf, int* size, map<string, string>* bufferComp
     cout << "Inbetween parseURI and getHTTPVersion the buffer is: " << endl;
     cout << buf << endl;
     buf = getHTTPVersion(buf, size, bufferComponents);
-    //parseHeaders(buf, size, bufferComponents);
+    buf = parseHeaders(buf, size, bufferComponents);
+    cout << "We should theoretically successfully have parsed the thing if we make it " << endl;
 }
 
 /** @AUTHOR Kenneth Adair
