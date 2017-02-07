@@ -386,6 +386,10 @@ void myService(int in, int out, map<string, string>* bufferComponents)
         //for(auto iterator = bufferComponents->begin(); iterator != bufferComponents->end(); iterator++){
         //    cout << iterator->first << ": " << iterator->second << endl;
         //}
+        typedef map<string, string>::const_iterator MapIterator;
+        for(MapIterator iter = bufferComponents->begin(); iter != bufferComponents->end(); iter++){
+            cout << "Key: " << iter->first << endl << "Value: " << iter->second << endl;
+        }
         //NO
 
         returnFile(out, filename);
