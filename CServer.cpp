@@ -25,6 +25,7 @@ int SERVER_PORT = 1067;
 const int FILENAME_MAX_SIZE = 256;
 const int FILENAME_BUFFER_SIZE = 1024;
 const int MAX_FILE_SIZE = 1048576;      //1 MiB, larger sizes such as 10 MiB cause segmentation faults.
+const string FILEPATH_FOLDER = "~/Documents/CServer";   //The filepath on my computer to the files to return.
 
 /** @AUTHOR Kenneth Adair
 *   Given a buffer this determines if it's a GET request by checking
@@ -79,7 +80,6 @@ void parseBuffer(unsigned char* buf, int size, map<string, string>* bufferCompon
     for(; i < buff.length(); i++){
         if(buff[i] == ' '){
             bufferComponents->insert(pair<string, string>("RequestType", buff.substr(0, i)));
-            cout << "The request type is: " << bufferComponents->find("RequestType")->second << endl;
             break;
         }
     }
@@ -94,7 +94,6 @@ void parseBuffer(unsigned char* buf, int size, map<string, string>* bufferCompon
     for(; i < buff.length(); i++){
         if(buff[i] == ' ' || buff[i] == '\n'){
             bufferComponents->insert(pair<string, string>("URI", buff.substr(startOfURI, i - startOfURI)));
-            cout << "The URI is: " << bufferComponents->find("URI")->second << endl;
             break;
         }
     }
@@ -102,31 +101,17 @@ void parseBuffer(unsigned char* buf, int size, map<string, string>* bufferCompon
 
 unsigned char* getRequestType(unsigned char* buf, int* size, map<string, string>* bufferComponents)
 {
-    string s(reinterpret_cast<const char*>(buf));
-    cout << "[getRequestType]Remaining buffer is: " << endl;
-    cout << s << endl;
-
     char* requestType = new char[*size];
     int i = 0;
     //First we'll try to find the type of request
     for(; i < *size; i++){
         if(buf[i] == ' '){
-            printf("Adding null terminator and finishing string.\n");
             requestType[i] = '\0';
             string request(requestType);
-            bufferComponents->insert(pair<string, string>("RequestTypez", request));
-            cout << "The request type is: " << bufferComponents->find("RequestTypez")->second << endl;
-            cout << "buffer was " << buf[0] << buf[1] << buf[2] << " (If this works it should say \"GET\")" << endl;
-            //*buf = buf[i];    //DOESN'T WORK
-            //buf = &buf[i];    //Works but doesn't update global
-            //*buf = buf[i];    //Changes the value at buf[0]
-            //cout << "buffer is now " << buf[0] << buf[1] << buf[2] << buf[3] << buf[4] << buf[5] << buf[6] << buf[7] << buf[8] << buf[9] << buf[10] << buf[11] << " (If this worked it should not be GET but part of index.html" << endl;
-            cout << "size was " << *size << endl;
+            bufferComponents->insert(pair<string, string>("RequestType", request));
             *size = *size - i;
-            cout << "size is now " << *size << endl;
             break;
         }else{
-            printf("Adding %c to the Request Type\n", buf[i]);
             requestType[i] = buf[i];
         }
     }
@@ -136,25 +121,12 @@ unsigned char* getRequestType(unsigned char* buf, int* size, map<string, string>
 
 unsigned char* parseURI(unsigned char* buf, int* size, map<string, string>* bufferComponents)
 {
-
-    string s(reinterpret_cast<const char*>(buf));
-    cout << "[parseURI] Remaining buffer is: " << endl;
-    cout << s << endl;
-
-    printf("Starting parseURI with the buffer starting at %c%c%c%c%c%c%c%c%c%c%c and the size is: %i\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7], buf[8], buf[9], buf[10], *size);
     //Loop to the URI
     int i = 0;
     for(; i < *size; i++){
         //Search for a forward slash which indicates the start of a URI
-        if(buf[i] == '/'){
-            //buf = buf + i;
-            //*size = *size - i;
-            cout << "Found a \\ at " << i << endl;
+        if(buf[i] == '/')
             break;
-        }
-        else{
-            cout << "Looping over: \"" << buf[i] << "\"" << endl;
-        }
     }
 
     char* uri = new char[*size];
@@ -163,18 +135,19 @@ unsigned char* parseURI(unsigned char* buf, int* size, map<string, string>* buff
     //Now that we're at the start of a URI we loop through it to retrieve the URI
     for(int j = 0; i < *size; i++, j++){
         if(buf[i] == ' ' || buf[i] == '\n'){
-            printf("Adding null terminator and finishing uri.\n");
             uri[j] = '\0';
             string myUri(uri);
             bufferComponents->insert(pair<string, string>("URI", myUri));
-            cout << "The URI is: " << bufferComponents->find("URI")->second << endl;
-            //buf = buf + i;
-            cout << "size was " << *size << endl;
+            /*************************************/
+            //Creating the filename we'll return
+            string filepath;
+            filepath.append(FILEPATH_FOLDER);
+            filepath.append(myUri);
+            bufferComponents->insert(pair<string, string>("Filepath", filepath));
+            /*************************************/
             *size = *size - i;
-            cout << "size is now " << *size << endl;
             break;
         }else{
-            printf("Adding %c to the URI\n", buf[i]);
             uri[j] = buf[i];
         }
     }
@@ -185,23 +158,18 @@ unsigned char* parseURI(unsigned char* buf, int* size, map<string, string>* buff
 
 unsigned char* getHTTPVersion(unsigned char* buf, int* size, map<string, string>* bufferComponents)
 {
-    string s(reinterpret_cast<const char*>(buf));
-    cout << "[getHTTPVersion] Remaining buffer is: " << endl;
-    cout << s << endl;
-
     int i = 0;
     //iterate through whitespace
     for(; i < *size; i++){
         //If there's nothing then it's a HTTP 1.0 request
         if(buf[i] == '\n'){
             bufferComponents->insert(pair<string, string>("HTTPVersion", "HTTP/1.0"));
+            *size = *size - i - 1;
             return &buf[i + 1];
         }
         //Once we've gone through the whitespace we break the loop
-        if(buf[i] != ' '){
-            cout << "\""<< buf[i] << "\"" << " is the buf[]" << endl;
+        if(buf[i] != ' ')
             break;
-        }
     }
 
     //This will be used to store the new string we're building
@@ -209,17 +177,12 @@ unsigned char* getHTTPVersion(unsigned char* buf, int* size, map<string, string>
 
     for(int j = 0; i < *size; i++, j++){
         if(buf[i] == ' ' || buf[i] == '\n'){
-            printf("Adding null terminator and finishing http version.\n");
             http[j] = '\0';
             string myHttp(http);
             bufferComponents->insert(pair<string, string>("HTTPVersion", myHttp));
-            cout << "The HTTP version is: " << bufferComponents->find("HTTPVersion")->second << endl;
-            cout << "size was " << *size << endl;
             *size = *size - i - 1;
-            cout << "size is now " << *size << endl;
             break;
         }else{
-            printf("Adding %c to the HTTP version\n", buf[i]);
             http[j] = buf[i];
         }
     }
@@ -230,11 +193,7 @@ unsigned char* getHTTPVersion(unsigned char* buf, int* size, map<string, string>
 //We'll recursively call this method until we find two newlines.
 unsigned char* parseHeaders(unsigned char* buf, int* size, map<string, string>* bufferComponents)
 {
-    //We'll assume we're at the start of a new line.
-    string s(reinterpret_cast<const char*>(buf));
-    cout << "[parseHeaders] Remaining buffer is: " << endl;
-    cout << s << endl;
-
+    //We assume we're at the start of a new line.
     int i = 0;
     char* key = new char[*size];
     //iterate through until ":"
@@ -243,12 +202,9 @@ unsigned char* parseHeaders(unsigned char* buf, int* size, map<string, string>* 
             key[i] = '\0';
             break;
         }else{
-            cout << "Adding " << buf[i] << " to the key." << endl;
             key[i] = buf[i];
         }
     }
-    cout << "The key is \"" << key << "\"" << endl;
-
     //Iterate through whitespace
     for(; i < *size; i++){
         if(buf[i] != ' ' && buf[i] != ':')
@@ -258,38 +214,24 @@ unsigned char* parseHeaders(unsigned char* buf, int* size, map<string, string>* 
     char* value = new char[*size];
 
     for(int j = 0; i < *size; i++, j++){
-        /*
-        if(buf[i] == '\r'){
-            cout << "Found a carriage return!  \"" << buf[i] << "\"" << endl;
-        }
-        */
-        if(/*buf[i] == '\r' && buf[i + 1] == '\n'*/buf[i] == '\n'){
-            printf("Adding null terminator and finishing this header.\n");
+        if(buf[i] == '\n'){
             value[j] = '\0';
             string myKey(key);
             string myValue(value);
             bufferComponents->insert(pair<string, string>(myKey, myValue));
-            cout << "Header key is: " << myKey << " with a value of: " << bufferComponents->find(myKey)->second << endl;
-            cout << "size was " << *size << endl;
             *size = *size - i - 1;
-            cout << "size is now " << *size << endl;
-            //two newlines means it's the end of the file
-            if(/*buf[i + 2] == '\r' && buf[i + 3] == '\n'*/buf[i + 1] == '\r' && buf[i + 2] == '\n'){
+            if(buf[i + 1] == '\r' && buf[i + 2] == '\n'){
                 delete[] key;
                 delete[] value;
-                //Recursively loop through until we've found everything.
-                //return parseHeaders(&buf[i + 1], size, bufferComponents);
                 return &buf[i];
             }
             break;
         }else{
-            printf("Adding %c to the header value\n", buf[i]);
             value[j] = buf[i];
         }
     }
     delete[] key;
     delete[] value;
-    //return &buf[i];
     return parseHeaders(&buf[i + 1], size, bufferComponents);
 }
 
@@ -301,8 +243,6 @@ void parseBuffer2(unsigned char* buf, int* size, map<string, string>* bufferComp
 {
     buf = getRequestType(buf, size, bufferComponents);
     buf = parseURI(buf, size, bufferComponents);
-    cout << "Inbetween parseURI and getHTTPVersion the buffer is: " << endl;
-    cout << buf << endl;
     buf = getHTTPVersion(buf, size, bufferComponents);
     buf = parseHeaders(buf, size, bufferComponents);
     cout << "We should theoretically successfully have parsed the thing if we make it " << endl;
@@ -322,6 +262,15 @@ void getFilenameFromUri(unsigned char* buf, unsigned char* filename, int size)
         }
         filename[i - startingIndex] = buf[i + 1];
     }
+}
+
+void getFilenameFromUri2(string filenameToConvert, unsigned char* filename, int size)
+{
+    int i = 0;
+    for(; i < filenameToConvert.length(); i++){
+        filename[i] = filenameToConvert.at(i);
+    }
+    filename[i] = '\0';
 }
 
 /** @AUTHOR Kenneth Adair
@@ -369,28 +318,17 @@ void myService(int in, int out, map<string, string>* bufferComponents)
     int count;
     count = read(in, buf, FILENAME_BUFFER_SIZE);
     /********************************/
-    parseBuffer(buf, count, bufferComponents);
+    //parseBuffer(buf, count, bufferComponents);
     /********************************/
     if(isGetRequest2(buf, count)){
-        printf("This is a GET request\n");
         getFilenameFromUri(buf, filename, count);
-        cout << "Filename is: " << filename << endl;
-        //NO
-        //getRequestType(buf, &count, bufferComponents);
-        //parseURI(buf, &count, bufferComponents);
         parseBuffer2(buf, &count, bufferComponents);
-        cout << "MOMENT OF TRUTH: SIZE IS: " << count << endl;
-        cout << "URI: \"" << bufferComponents->find("URI")->second << "\"" << endl;
-        cout << "REQUEST TYPE: " << bufferComponents->find("RequestTypez")->second << endl;
-        cout << "HTTP VERSION: " << bufferComponents->find("HTTPVersion")->second << endl;
-        //for(auto iterator = bufferComponents->begin(); iterator != bufferComponents->end(); iterator++){
-        //    cout << iterator->first << ": " << iterator->second << endl;
-        //}
         typedef map<string, string>::const_iterator MapIterator;
         for(MapIterator iter = bufferComponents->begin(); iter != bufferComponents->end(); iter++){
             cout << "Key: " << iter->first << endl << "Value: " << iter->second << endl;
         }
-        //NO
+        //bufferComponents->find("Filepath")->second;
+        //getFilenameFromUri2(bufferComponents->find("Filepath")->second, filename, count);
 
         returnFile(out, filename);
     }
