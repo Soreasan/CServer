@@ -25,8 +25,9 @@ int SERVER_PORT = 1067;
 const int FILENAME_MAX_SIZE = 256;
 const int FILENAME_BUFFER_SIZE = 1024;
 const int MAX_FILE_SIZE = 1048576;      //1 MiB, larger sizes such as 10 MiB cause segmentation faults.
-const string FILEPATH_FOLDER = "~/Documents/CServer";   //The filepath on my computer to the files to return.
-
+const string FILEPATH_FOLDER = "/Users/kennethadair/Documents/CServer";   //The filepath on my computer to the files to return.
+const string FILEPATH2 = "~\\Documents\\CServer\\index.html";
+const string FILEPATH3 = "/Users/kennethadair/Documents/CServer/index.html";
 /** @AUTHOR Kenneth Adair
 *   Given a buffer this determines if it's a GET request by checking
 *   the first 3 letters of the buffer.
@@ -143,6 +144,7 @@ unsigned char* parseURI(unsigned char* buf, int* size, map<string, string>* buff
             string filepath;
             filepath.append(FILEPATH_FOLDER);
             filepath.append(myUri);
+            cout << "\"" << filepath << "\"" << endl;
             bufferComponents->insert(pair<string, string>("Filepath", filepath));
             /*************************************/
             *size = *size - i;
@@ -271,6 +273,7 @@ void getFilenameFromUri2(string filenameToConvert, unsigned char* filename, int 
         filename[i] = filenameToConvert.at(i);
     }
     filename[i] = '\0';
+    cout << "Filename is: " << filename << endl;
 }
 
 /** @AUTHOR Kenneth Adair
@@ -321,15 +324,16 @@ void myService(int in, int out, map<string, string>* bufferComponents)
     //parseBuffer(buf, count, bufferComponents);
     /********************************/
     if(isGetRequest2(buf, count)){
-        getFilenameFromUri(buf, filename, count);
+        //getFilenameFromUri(buf, filename, count);
         parseBuffer2(buf, &count, bufferComponents);
         typedef map<string, string>::const_iterator MapIterator;
         for(MapIterator iter = bufferComponents->begin(); iter != bufferComponents->end(); iter++){
             cout << "Key: " << iter->first << endl << "Value: " << iter->second << endl;
         }
         //bufferComponents->find("Filepath")->second;
-        //getFilenameFromUri2(bufferComponents->find("Filepath")->second, filename, count);
-
+        //FILEPATH2
+        getFilenameFromUri2(bufferComponents->find("Filepath")->second, filename, count);
+        //getFilenameFromUri2(FILEPATH3, filename, count);
         returnFile(out, filename);
     }
 }
