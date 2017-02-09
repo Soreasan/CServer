@@ -236,6 +236,8 @@ unsigned char* getHTTPVersion(unsigned char* buf, int* size, map<string, string>
 //We'll recursively call this method until we find two newlines.
 unsigned char* parseHeaders(unsigned char* buf, int* size, map<string, string>* bufferComponents)
 {
+    if(*size < 0)
+      return &buf[0];
     //We assume we're at the start of a new line.
     int i = 0;
     char* key = new char[*size];
