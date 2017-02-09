@@ -30,6 +30,20 @@ const int FILENAME_MAX_SIZE = 256;
 const int FILENAME_BUFFER_SIZE = 1024;
 const int MAX_FILE_SIZE = 1048576;      //1 MiB, larger sizes such as 10 MiB cause segmentation faults.
 string FILEPATH_FOLDER = "/Users/kennethadair/Documents/CServer";   //The filepath on my computer to the files to return.
+
+const char * HARDCODED_REPLY =
+"HTTP/1.1 200 OK\n"
+"Date: Thu, 19 Feb 2009 12:27:04 GMT\n"
+"Server: Apache/2.2.3\n"
+"Last-Modified: Wed, 18 Jun 2003 16:05:58 GMT\n"
+"ETag: \"56d-9989200-1132c580\"\n"
+"Content-Type: text/html\n"
+"Content-Length: 86\n"
+"Accept-Ranges: bytes\n"
+"Connection: close\n"
+"\n"
+"<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>";
+
 /** @AUTHOR Kenneth Adair
 *   Given a buffer this determines if it's a GET request by checking
 *   the first 3 letters of the buffer.
@@ -300,7 +314,8 @@ void returnFile(int out, unsigned char* filename)
     if(nread > 0)
     {
         printf("Sending \n");
-        write(out, buff, nread);
+        //write(out, buff, nread);
+        send(out, HARDCODED_REPLY, strlen(HARDCODED_REPLY), 0);
     }
 
     /*
