@@ -2,6 +2,10 @@
 *   @FILENAME   CServer.cpp
 *   The goal is for this server to be able to process a GET request from CURL and return the appropriate file.
 *
+*   To run this use:
+*   c++ CServer.cpp
+*   ./a.out 1068 /Users/kennethadair/Documents/Python
+*
 *   Version 1.0
 *   Completed 12/22/16
 *   Successfully returns the contents of a file from a CURL GET request
@@ -25,9 +29,7 @@ int SERVER_PORT = 1067;
 const int FILENAME_MAX_SIZE = 256;
 const int FILENAME_BUFFER_SIZE = 1024;
 const int MAX_FILE_SIZE = 1048576;      //1 MiB, larger sizes such as 10 MiB cause segmentation faults.
-const string FILEPATH_FOLDER = "/Users/kennethadair/Documents/CServer";   //The filepath on my computer to the files to return.
-const string FILEPATH2 = "~\\Documents\\CServer\\index.html";
-const string FILEPATH3 = "/Users/kennethadair/Documents/CServer/index.html";
+string FILEPATH_FOLDER = "/Users/kennethadair/Documents/CServer";   //The filepath on my computer to the files to return.
 /** @AUTHOR Kenneth Adair
 *   Given a buffer this determines if it's a GET request by checking
 *   the first 3 letters of the buffer.
@@ -45,7 +47,7 @@ bool isGetRequest2(unsigned char* buf, int size)
     // Cast the buf to a c++ string
     // http://stackoverflow.com/questions/1195675/convert-a-char-to-stdstring
     string buff(reinterpret_cast<const char*>(buf));
-    // Check if the string contains the word GET 
+    // Check if the string contains the word GET
     // http://stackoverflow.com/questions/2340281/check-if-a-string-contains-a-string-in-c
     if(buff.find("GET") != std::string::npos){
         return true;
@@ -60,7 +62,7 @@ GET /index.html HTTP/1.1
 [thingy]: thingy
 [thingy]: thingy
 \n
-So I need something to parse the request type, something to parse the URI, check if it says HTTP/1.1 or 
+So I need something to parse the request type, something to parse the URI, check if it says HTTP/1.1 or
 is empty (which means it's HTTP/1.0), then something to parse the attributes like content-type.  Once
 I hit two newlines that means the request is done.  We need to consume it and move the stuff
 
@@ -251,7 +253,7 @@ void parseBuffer2(unsigned char* buf, int* size, map<string, string>* bufferComp
 }
 
 /** @AUTHOR Kenneth Adair
-*   Given a buffer of a GET request from CURL this retrieves the name of the file.  
+*   Given a buffer of a GET request from CURL this retrieves the name of the file.
 */
 void getFilenameFromUri(unsigned char* buf, unsigned char* filename, int size)
 {
@@ -283,11 +285,11 @@ void returnFile(int out, unsigned char* filename)
 {
     unsigned char buff[MAX_FILE_SIZE]={0};
     int count;
-    FILE *fp = fopen(reinterpret_cast<const char*>(filename), "rb");      
+    FILE *fp = fopen(reinterpret_cast<const char*>(filename), "rb");
     if(fp==NULL)
     {
         printf("File open error");
-        return;   
+        return;
     }else{
         printf("There is a filename and it's %s\n", filename);
     }
@@ -302,7 +304,7 @@ void returnFile(int out, unsigned char* filename)
     }
 
     /*
-     * There is something tricky going on with read .. 
+     * There is something tricky going on with read ..
      * Either there was error, or we reached end of file.
      */
     if (nread < MAX_FILE_SIZE)
@@ -345,13 +347,20 @@ void myService(int in, int out, map<string, string>* bufferComponents)
 void setPort(int argc, char *argv[])
 {
     //If there is a commandline argument and it's a number set it to that number, otherwise use default value
-	SERVER_PORT = (argc == 2 && strtol(argv[1], NULL, 10) != 0) ? strtol(argv[1], NULL, 10) : SERVER_PORT;
+	SERVER_PORT = ((argc == 2 || argc == 3) && strtol(argv[1], NULL, 10) != 0) ? strtol(argv[1], NULL, 10) : SERVER_PORT;
 	cout << "Will listen on port " << SERVER_PORT << endl;
+}
+
+void setFilepath(int argc, char *argv[])
+{
+  FILEPATH_FOLDER = (argc == 3) ? argv[2] : FILEPATH_FOLDER;
+  cout << "Will return files in the directory \"" << FILEPATH_FOLDER << "\"" << endl;
 }
 
 int main(int argc, char *argv[])
 {
-	setPort(argc, argv);
+	  setPort(argc, argv);
+    setFilepath(argc, argv);
     //Boilerplate networking code
     int sock, fd, client_len;
     struct sockaddr_in server, client;
@@ -376,7 +385,7 @@ int main(int argc, char *argv[])
             fd = accept(sock, (struct sockaddr *)&client, (socklen_t*)  &client_len);
             printf("got connection\n");
             map<string, string> myMap;
-            myService(fd, fd, &myMap);        
+            myService(fd, fd, &myMap);
             close(fd);
         }
         catch(exception& e)
