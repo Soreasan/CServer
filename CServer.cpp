@@ -22,7 +22,6 @@
 #include <string.h>
 #include <iostream>
 #include <map>
-//#include <string>
 using namespace std;
 
 int SERVER_PORT = 1067;
@@ -44,76 +43,102 @@ const char * HARDCODED_REPLY =
 "\n"
 "<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>";
 
-/** @AUTHOR Kenneth Adair
-*   Given a buffer this determines if it's a GET request by checking
-*   the first 3 letters of the buffer.
-*/
-bool isGetRequest(unsigned char* buf, int size)
-{
-    return (strncmp(reinterpret_cast<const char*>(buf), "GET", (size < 3) ? size : 3) == 0);
-}
+void setPort(int argc, char *argv[]);
+void setFilepath(int argc, char *argv[]);
+void myService(int in, int out, map<string, string>* bufferComponents);
+void parseBuffer(unsigned char* buf, int* size, map<string, string>* bufferComponents);
+unsigned char* getRequestType(unsigned char* buf, int* size, map<string, string>* bufferComponents);
+unsigned char* parseURI(unsigned char* buf, int* size, map<string, string>* bufferComponents);
+unsigned char* getHTTPVersion(unsigned char* buf, int* size, map<string, string>* bufferComponents);
+unsigned char* parseHeaders(unsigned char* buf, int* size, map<string, string>* bufferComponents);
+void getFilenameFromUri(string filenameToConvert, unsigned char* filename, int size);
+void returnFile(int out, unsigned char* filename);
 
-/** @AUTHOR Kenneth Adair
-*   Alternative approach to check if there's a GET request, doesn't only check first three characters
-*/
-bool isGetRequest2(unsigned char* buf, int size)
+int main(int argc, char *argv[])
 {
-    // Cast the buf to a c++ string
-    // http://stackoverflow.com/questions/1195675/convert-a-char-to-stdstring
-    string buff(reinterpret_cast<const char*>(buf));
-    // Check if the string contains the word GET
-    // http://stackoverflow.com/questions/2340281/check-if-a-string-contains-a-string-in-c
-    if(buff.find("GET") != std::string::npos){
-        return true;
+	  setPort(argc, argv);
+    setFilepath(argc, argv);
+    //Boilerplate networking code
+    int sock, fd, client_len;
+    struct sockaddr_in server, client;
+    struct servent *service;
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = htonl(INADDR_ANY);
+    server.sin_port = htons(SERVER_PORT);
+    bind(sock, (struct sockaddr *)&server, sizeof(server));
+    if(listen(sock, 5) == -1)
+    {
+        printf("Failed to listen\n");
+        return -1;
     }
-    return false;
+    printf("listening...\n");
 
+    //Wait for users to connect, then send them the contents of files if they send a GET request
+    while(1){
+        try
+        {
+            client_len = sizeof(client);
+            fd = accept(sock, (struct sockaddr *)&client, (socklen_t*)  &client_len);
+            printf("got connection\n");
+            map<string, string> myMap;
+            myService(fd, fd, &myMap);
+            close(fd);
+        }
+        catch(exception& e)
+        {
+            cout << e.what() << endl;
+        }
+    }
+
+    return 0;
 }
 
-/*
-To parse a buffer there will be 4 stages:
-GET /index.html HTTP/1.1
-[thingy]: thingy
-[thingy]: thingy
-\n
-So I need something to parse the request type, something to parse the URI, check if it says HTTP/1.1 or
-is empty (which means it's HTTP/1.0), then something to parse the attributes like content-type.  Once
-I hit two newlines that means the request is done.  We need to consume it and move the stuff
-
-When I send a response back the content-length will be sizeof(file) and doesn't include the size of the header
+/** @AUTHOR Kenneth Adair
+*   This method checks for commandline arguments and if the user puts a port number it changes the port.
+*   Otherwise it uses the default port number.
 */
+void setPort(int argc, char *argv[])
+{
+    //If there is a commandline argument and it's a number set it to that number, otherwise use default value
+	SERVER_PORT = ((argc == 2 || argc == 3) && strtol(argv[1], NULL, 10) != 0) ? strtol(argv[1], NULL, 10) : SERVER_PORT;
+	cout << "Will listen on port " << SERVER_PORT << endl;
+}
 
+void setFilepath(int argc, char *argv[])
+{
+  FILEPATH_FOLDER = (argc == 3) ? argv[2] : FILEPATH_FOLDER;
+  cout << "Will return files in the directory \"" << FILEPATH_FOLDER << "\"" << endl;
+}
+
+void myService(int in, int out, map<string, string>* bufferComponents)
+{
+    unsigned char buf[FILENAME_BUFFER_SIZE];
+    unsigned char filename[FILENAME_BUFFER_SIZE];
+    int count;
+    count = read(in, buf, FILENAME_BUFFER_SIZE);
+    parseBuffer(buf, &count, bufferComponents);
+    typedef map<string, string>::const_iterator MapIterator;
+    for(MapIterator iter = bufferComponents->begin(); iter != bufferComponents->end(); iter++){
+        cout << "Key: " << iter->first << endl << "Value: " << iter->second << endl;
+    }
+    if(bufferComponents->find("RequestType")->second == "GET"){
+        getFilenameFromUri(bufferComponents->find("Filepath")->second, filename, count);
+        returnFile(out, filename);
+    }
+}
 
 /** @AUTHOR Kenneth Adair
 *   Goes through the buffer and fills the hash table with all the components of our buffer
 */
-void parseBuffer(unsigned char* buf, int size, map<string, string>* bufferComponents)
+//first we need to identify what the request type is:
+void parseBuffer(unsigned char* buf, int* size, map<string, string>* bufferComponents)
 {
-    //i will be used to track which character we're on
-    int i = 0;
-    //Casting the buffer to a string to make it easier to work with
-    string buff(reinterpret_cast<const char*>(buf));
-    //First we'll try to find the type of request
-    for(; i < buff.length(); i++){
-        if(buff[i] == ' '){
-            bufferComponents->insert(pair<string, string>("RequestType", buff.substr(0, i)));
-            break;
-        }
-    }
-    //At this point i should be at the square with the space so we should be able to search for the URI next
-    //This moves us to the start of the URI
-    for(; i < buff.length(); i++){
-        if(buff[i] == '/')
-            break;
-    }
-    //For the substring method we'll track where the URI starts.
-    int startOfURI = i;
-    for(; i < buff.length(); i++){
-        if(buff[i] == ' ' || buff[i] == '\n'){
-            bufferComponents->insert(pair<string, string>("URI", buff.substr(startOfURI, i - startOfURI)));
-            break;
-        }
-    }
+    buf = getRequestType(buf, size, bufferComponents);
+    buf = parseURI(buf, size, bufferComponents);
+    buf = getHTTPVersion(buf, size, bufferComponents);
+    buf = parseHeaders(buf, size, bufferComponents);
+    cout << "We should theoretically successfully have parsed the thing if we make it " << endl;
 }
 
 unsigned char* getRequestType(unsigned char* buf, int* size, map<string, string>* bufferComponents)
@@ -253,36 +278,7 @@ unsigned char* parseHeaders(unsigned char* buf, int* size, map<string, string>* 
     return parseHeaders(&buf[i + 1], size, bufferComponents);
 }
 
-/** @AUTHOR Kenneth Adair
-*   Goes through the buffer and fills the hash table with all the components of our buffer
-*/
-//first we need to identify what the request type is:
-void parseBuffer2(unsigned char* buf, int* size, map<string, string>* bufferComponents)
-{
-    buf = getRequestType(buf, size, bufferComponents);
-    buf = parseURI(buf, size, bufferComponents);
-    buf = getHTTPVersion(buf, size, bufferComponents);
-    buf = parseHeaders(buf, size, bufferComponents);
-    cout << "We should theoretically successfully have parsed the thing if we make it " << endl;
-}
-
-/** @AUTHOR Kenneth Adair
-*   Given a buffer of a GET request from CURL this retrieves the name of the file.
-*/
-void getFilenameFromUri(unsigned char* buf, unsigned char* filename, int size)
-{
-    //startingIndex is the 4th index, assuming that the first 4 symbols are "GET "
-    int startingIndex = 4;
-    for(int i = startingIndex; i < size; i++){
-        if((char)buf[i + 1] == ' '){
-            filename[i - startingIndex] = '\0';
-            break;
-        }
-        filename[i - startingIndex] = buf[i + 1];
-    }
-}
-
-void getFilenameFromUri2(string filenameToConvert, unsigned char* filename, int size)
+void getFilenameFromUri(string filenameToConvert, unsigned char* filename, int size)
 {
     int i = 0;
     for(; i < filenameToConvert.length(); i++){
@@ -329,85 +325,4 @@ void returnFile(int out, unsigned char* filename)
         if (ferror(fp))
             printf("Error reading\n");
     }
-}
-
-void myService(int in, int out, map<string, string>* bufferComponents)
-{
-    unsigned char buf[FILENAME_BUFFER_SIZE];
-    unsigned char filename[FILENAME_BUFFER_SIZE];
-    int count;
-    count = read(in, buf, FILENAME_BUFFER_SIZE);
-    /********************************/
-    //parseBuffer(buf, count, bufferComponents);
-    /********************************/
-    if(isGetRequest2(buf, count)){
-        //getFilenameFromUri(buf, filename, count);
-        parseBuffer2(buf, &count, bufferComponents);
-        typedef map<string, string>::const_iterator MapIterator;
-        for(MapIterator iter = bufferComponents->begin(); iter != bufferComponents->end(); iter++){
-            cout << "Key: " << iter->first << endl << "Value: " << iter->second << endl;
-        }
-        //bufferComponents->find("Filepath")->second;
-        //FILEPATH2
-        getFilenameFromUri2(bufferComponents->find("Filepath")->second, filename, count);
-        //getFilenameFromUri2(FILEPATH3, filename, count);
-        returnFile(out, filename);
-    }
-}
-
-/** @AUTHOR Kenneth Adair
-*   This method checks for commandline arguments and if the user puts a port number it changes the port.
-*   Otherwise it uses the default port number.
-*/
-void setPort(int argc, char *argv[])
-{
-    //If there is a commandline argument and it's a number set it to that number, otherwise use default value
-	SERVER_PORT = ((argc == 2 || argc == 3) && strtol(argv[1], NULL, 10) != 0) ? strtol(argv[1], NULL, 10) : SERVER_PORT;
-	cout << "Will listen on port " << SERVER_PORT << endl;
-}
-
-void setFilepath(int argc, char *argv[])
-{
-  FILEPATH_FOLDER = (argc == 3) ? argv[2] : FILEPATH_FOLDER;
-  cout << "Will return files in the directory \"" << FILEPATH_FOLDER << "\"" << endl;
-}
-
-int main(int argc, char *argv[])
-{
-	  setPort(argc, argv);
-    setFilepath(argc, argv);
-    //Boilerplate networking code
-    int sock, fd, client_len;
-    struct sockaddr_in server, client;
-    struct servent *service;
-    sock = socket(AF_INET, SOCK_STREAM, 0);
-    server.sin_family = AF_INET;
-    server.sin_addr.s_addr = htonl(INADDR_ANY);
-    server.sin_port = htons(SERVER_PORT);
-    bind(sock, (struct sockaddr *)&server, sizeof(server));
-    if(listen(sock, 5) == -1)
-    {
-        printf("Failed to listen\n");
-        return -1;
-    }
-    printf("listening...\n");
-
-    //Wait for users to connect, then send them the contents of files if they send a GET request
-    while(1){
-        try
-        {
-            client_len = sizeof(client);
-            fd = accept(sock, (struct sockaddr *)&client, (socklen_t*)  &client_len);
-            printf("got connection\n");
-            map<string, string> myMap;
-            myService(fd, fd, &myMap);
-            close(fd);
-        }
-        catch(exception& e)
-        {
-            cout << e.what() << endl;
-        }
-    }
-
-    return 0;
 }
