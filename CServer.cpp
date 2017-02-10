@@ -30,7 +30,7 @@ const int FILENAME_BUFFER_SIZE = 1024;
 const int MAX_FILE_SIZE = 1048576;      //1 MiB, larger sizes such as 10 MiB cause segmentation faults.
 string FILEPATH_FOLDER = "/Users/kennethadair/Documents/CServer";   //The filepath on my computer to the files to return.
 
-const char * HARDCODED_REPLY =
+const unsigned char * HARDCODED_REPLY = reinterpret_cast<const unsigned char *>(
 "HTTP/1.1 200 OK\n"
 "Date: Thu, 19 Feb 2009 12:27:04 GMT\n"
 "Server: Apache/2.2.3\n"
@@ -41,18 +41,45 @@ const char * HARDCODED_REPLY =
 "Accept-Ranges: bytes\n"
 "Connection: close\n"
 "\n"
-"<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>";
+"<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>");
 
+//Retrieving information over the commandline.
 void setPort(int argc, char *argv[]);
 void setFilepath(int argc, char *argv[]);
+
+//Calls all the other methods for the server
 void myService(int in, int out, map<string, string>* bufferComponents);
+
+//These methods are used to parse the requests the server receives
 void parseBuffer(unsigned char* buf, int* size, map<string, string>* bufferComponents);
 unsigned char* getRequestType(unsigned char* buf, int* size, map<string, string>* bufferComponents);
 unsigned char* parseURI(unsigned char* buf, int* size, map<string, string>* bufferComponents);
 unsigned char* getHTTPVersion(unsigned char* buf, int* size, map<string, string>* bufferComponents);
 unsigned char* parseHeaders(unsigned char* buf, int* size, map<string, string>* bufferComponents);
+
+//This method converts strings to unsigned char*
 void getFilenameFromUri(string filenameToConvert, unsigned char* filename, int size);
+void castStringToChar(string stringToConvert, char* output, int outputSize);
+
+//This method sends the file back
 void returnFile(int out, unsigned char* filename);
+
+/*
+//serverResponse will be a character array that we'll pass from method to method until it's completely built.
+void returnProperlyFormattedResponse(char* serverResponse, map<string, string>* bufferComponents){
+  appendHttpVersion(serverResponse, bufferComponents);
+  appendResponseCodeAndOK(serverResponse, bufferComponents);
+  appendDate(serverResponse, bufferComponents);
+  appendServer(serverResponse, bufferComponents);
+  appendLastModified(serverResponse, bufferComponents);
+  appendEtag(serverResponse, bufferComponents);
+  appendContentType(serverResponse, bufferComponents);
+  appendAcceptRanges(serverResponse, bufferComponents);
+  appendConnectionCloseAndTwoNewLines(serverResponse, bufferComponents);
+  appendFileContents(serverResponse, bufferComponents);
+  sendProperlyFormattedResponse(serverResponse, bufferComponents);
+}
+*/
 
 int main(int argc, char *argv[])
 {
@@ -290,6 +317,16 @@ void getFilenameFromUri(string filenameToConvert, unsigned char* filename, int s
     cout << "Filename is: " << filename << endl;
 }
 
+void castStringToChar(string stringToConvert, char* output, int outputSize)
+{
+  int i = 0;
+  int size = (stringToConvert.length() > outputSize) ? stringToConvert.length() : outputSize;
+  for(; i < size; i++){
+      output[i] = stringToConvert.at(i);
+  }
+  output[i] = '\0';
+}
+
 /** @AUTHOR Kenneth Adair
 *   This method writes the contents of a file to an open file descriptor.
 */
@@ -313,7 +350,7 @@ void returnFile(int out, unsigned char* filename)
     {
         printf("Sending \n");
         //write(out, buff, nread);
-        send(out, HARDCODED_REPLY, strlen(HARDCODED_REPLY), 0);
+        send(out, HARDCODED_REPLY, strlen(reinterpret_cast<const char *>(HARDCODED_REPLY)), 0);
     }
 
     /*
