@@ -66,7 +66,7 @@ void returnFile(int out, unsigned char* filename);
 
 
 //serverResponse will be a character array that we'll pass from method to method until it's completely built.
-void returnProperlyFormattedResponse(string* serverResponse, map<string, string>* bufferComponents);
+void returnProperlyFormattedResponse(int out, unsigned char* filename, string* serverResponse, map<string, string>* bufferComponents);
 
 //These methods are used to append certain components of the response.
 void appendHttpVersion(string* serverResponse, map<string, string>* bufferComponents);
@@ -80,7 +80,7 @@ void appendContentLength(string* serverResponse, map<string, string>* bufferComp
 void appendAcceptRanges(string* serverResponse, map<string, string>* bufferComponents);
 void appendConnectionCloseAndTwoNewLines(string* serverResponse, map<string, string>* bufferComponents);
 void appendFileContents(string* serverResponse, map<string, string>* bufferComponents);
-void sendProperlyFormattedResponse(string* serverResponse, map<string, string>* bufferComponents);
+void sendProperlyFormattedResponse(int out, unsigned char* filename, string* serverResponse, map<string, string>* bufferComponents);
 
 int main(int argc, char *argv[])
 {
@@ -153,8 +153,8 @@ void myService(int in, int out, map<string, string>* bufferComponents)
     if(bufferComponents->find("RequestType")->second == "GET"){
         getFilenameFromUri(bufferComponents->find("Filepath")->second, filename, count);
 				string serverResponse = "";
-				returnProperlyFormattedResponse(&serverResponse, bufferComponents);
-        returnFile(out, filename);
+				returnProperlyFormattedResponse(out, filename, &serverResponse, bufferComponents);
+        //returnFile(out, filename);
     }
 }
 
@@ -370,7 +370,7 @@ void returnFile(int out, unsigned char* filename)
 }
 
 //serverResponse will be a character array that we'll pass from method to method until it's completely built.
-void returnProperlyFormattedResponse(string* serverResponse, map<string, string>* bufferComponents){
+void returnProperlyFormattedResponse(int out, unsigned char* filename, string* serverResponse, map<string, string>* bufferComponents){
 	*serverResponse = "";
 	/*
   *serverResponse = appendHttpVersion(serverResponse, bufferComponents);
@@ -398,7 +398,8 @@ void returnProperlyFormattedResponse(string* serverResponse, map<string, string>
 	appendFileContents(serverResponse, bufferComponents);
 	cout << "*** server response is: ***" << endl;
 	cout << *serverResponse << endl;
-  //*serverResponse = sendProperlyFormattedResponse(serverResponse, bufferComponents);
+	cout << "***************************" << endl;
+  sendProperlyFormattedResponse(out, filename, serverResponse, bufferComponents);
 }
 
 /*
@@ -477,7 +478,57 @@ void appendFileContents(string* serverResponse, map<string, string>* bufferCompo
 	serverResponse->append("<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>");
 }
 
-void sendProperlyFormattedResponse(string* serverResponse, map<string, string>* bufferComponents)
+void sendProperlyFormattedResponse(int out, unsigned char* filename, string* serverResponse, map<string, string>* bufferComponents)
 {
-	const unsigned char * HARDCODED_REPLY2 = reinterpret_cast<const unsigned char *>((*serverResponse).c_str());
+	//const unsigned char * HARDCODED_REPLY2 = reinterpret_cast<const unsigned char *>((*serverResponse).c_str());
+	unsigned char buff[MAX_FILE_SIZE]={0};
+	int count;
+	FILE *fp = fopen(reinterpret_cast<const char*>(filename), "rb");
+	if(fp==NULL)
+	{
+		printf("File open error");
+		return;
+	}else{
+		printf("There is a filename and it's %s\n", filename);
+	}
+	int nread = fread(buff,1,MAX_FILE_SIZE,fp);
+	printf("Bytes read %d \n", nread);
+
+	/* If read was success, send data. */
+	if(nread > 0)
+	{
+	    printf("Sending \n");
+	    //write(out, buff, nread);
+	    //send(out, serverResponse, strlen(reinterpret_cast<const char *>(serverResponse)), 0);
+			cout << "Server response right before sending it out is: " << endl;
+			cout << *serverResponse << endl;
+			cout << "HARDCODED_REPLY right before sending it out is: " << endl;
+			int FML = strcmp((*serverResponse).c_str(), reinterpret_cast<const char *>(HARDCODED_REPLY));
+			cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" << endl;
+			cout << "server response and HARDCODED_REPLY are equal?  (True/False) - " << FML << endl;
+			cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" << endl;
+			//cout << HARDCODED_REPLY << endl;
+			int OMGLENGTH = (*serverResponse).length();
+			char* output = NULL;
+			castStringToChar(*serverResponse, output, OMGLENGTH);
+			printf("%s", output);
+			send(out, reinterpret_cast<const unsigned char *>(output), OMGLENGTH, 0);
+			//send(out, reinterpret_cast<const unsigned char *>(serverResponse), OMGLENGTH, 0);
+			//send(out, HARDCODED_REPLY, OMGLENGTH, 0);	//THIS WORKS AND STUFF
+			//send(out, reinterpret_cast<const unsigned char *>(serverResponse), strlen(reinterpret_cast<const char *>(serverResponse)), 0);
+			//send(out, HARDCODED_REPLY, strlen(reinterpret_cast<const char *>(HARDCODED_REPLY)), 0);
+			//write(out, reinterpret_cast<const unsigned char *>(serverResponse), strlen((*serverResponse).c_str()));
+	}
+
+	/*
+	 * There is something tricky going on with read ..
+	 * Either there was error, or we reached end of file.
+	 */
+	if (nread < MAX_FILE_SIZE)
+	{
+	    if (feof(fp))
+	        printf("End of file\n");
+	    if (ferror(fp))
+	        printf("Error reading\n");
+	}
 }
