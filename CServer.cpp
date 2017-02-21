@@ -64,22 +64,22 @@ void castStringToChar(string stringToConvert, char* output, int outputSize);
 //This method sends the file back
 void returnFile(int out, unsigned char* filename);
 
-/*
+
 //serverResponse will be a character array that we'll pass from method to method until it's completely built.
-void returnProperlyFormattedResponse(char* serverResponse, map<string, string>* bufferComponents){
-  appendHttpVersion(serverResponse, bufferComponents);
-  appendResponseCodeAndOK(serverResponse, bufferComponents);
-  appendDate(serverResponse, bufferComponents);
-  appendServer(serverResponse, bufferComponents);
-  appendLastModified(serverResponse, bufferComponents);
-  appendEtag(serverResponse, bufferComponents);
-  appendContentType(serverResponse, bufferComponents);
-  appendAcceptRanges(serverResponse, bufferComponents);
-  appendConnectionCloseAndTwoNewLines(serverResponse, bufferComponents);
-  appendFileContents(serverResponse, bufferComponents);
-  sendProperlyFormattedResponse(serverResponse, bufferComponents);
-}
-*/
+void returnProperlyFormattedResponse(string* serverResponse, map<string, string>* bufferComponents);
+
+//These methods are used to append certain components of the response.
+string appendHttpVersion(string* serverResponse, map<string, string>* bufferComponents);
+string appendResponseCodeAndOK(string* serverResponse, map<string, string>* bufferComponents);
+string appendDate(string* serverResponse, map<string, string>* bufferComponents);
+string appendServer(string* serverResponse, map<string, string>* bufferComponents);
+string appendLastModified(string* serverResponse, map<string, string>* bufferComponents);
+string appendEtag(string* serverResponse, map<string, string>* bufferComponents);
+string appendContentType(string* serverResponse, map<string, string>* bufferComponents);
+string appendAcceptRanges(string* serverResponse, map<string, string>* bufferComponents);
+string appendConnectionCloseAndTwoNewLines(string* serverResponse, map<string, string>* bufferComponents);
+string appendFileContents(string* serverResponse, map<string, string>* bufferComponents);
+string sendProperlyFormattedResponse(string* serverResponse, map<string, string>* bufferComponents);
 
 int main(int argc, char *argv[])
 {
@@ -364,4 +364,74 @@ void returnFile(int out, unsigned char* filename)
         if (ferror(fp))
             printf("Error reading\n");
     }
+}
+
+//serverResponse will be a character array that we'll pass from method to method until it's completely built.
+void returnProperlyFormattedResponse(string* serverResponse, map<string, string>* bufferComponents){
+  appendHttpVersion(serverResponse, bufferComponents);
+  appendResponseCodeAndOK(serverResponse, bufferComponents);
+  appendDate(serverResponse, bufferComponents);
+  appendServer(serverResponse, bufferComponents);
+  appendLastModified(serverResponse, bufferComponents);
+  appendEtag(serverResponse, bufferComponents);
+  appendContentType(serverResponse, bufferComponents);
+  appendAcceptRanges(serverResponse, bufferComponents);
+  appendConnectionCloseAndTwoNewLines(serverResponse, bufferComponents);
+  appendFileContents(serverResponse, bufferComponents);
+  sendProperlyFormattedResponse(serverResponse, bufferComponents);
+}
+
+string appendHttpVersion(string* serverResponse, map<string, string>* bufferComponents)
+{
+	return "not implemented yet";
+}
+
+string appendResponseCodeAndOK(string* serverResponse, map<string, string>* bufferComponents)
+{
+	return "not implemented yet";
+}
+
+string appendDate(string* serverResponse, map<string, string>* bufferComponents)
+{
+	return "not implemented yet";
+}
+
+string appendServer(string* serverResponse, map<string, string>* bufferComponents)
+{
+	return "not implemented yet";
+}
+
+string appendLastModified(string* serverResponse, map<string, string>* bufferComponents)
+{
+	return "not implemented yet";
+}
+
+string appendEtag(string* serverResponse, map<string, string>* bufferComponents)
+{
+	return "not implemented yet";
+}
+
+string appendContentType(string* serverResponse, map<string, string>* bufferComponents)
+{
+	return "not implemented yet";
+}
+
+string appendAcceptRanges(string* serverResponse, map<string, string>* bufferComponents)
+{
+	return "not implemented yet";
+}
+
+string appendConnectionCloseAndTwoNewLines(string* serverResponse, map<string, string>* bufferComponents)
+{
+	return "not implemented yet";
+}
+
+string appendFileContents(string* serverResponse, map<string, string>* bufferComponents)
+{
+	return "not implemented yet";
+}
+
+string sendProperlyFormattedResponse(string* serverResponse, map<string, string>* bufferComponents)
+{
+	return "not implemented yet";
 }
