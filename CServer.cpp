@@ -69,17 +69,18 @@ void returnFile(int out, unsigned char* filename);
 void returnProperlyFormattedResponse(string* serverResponse, map<string, string>* bufferComponents);
 
 //These methods are used to append certain components of the response.
-string appendHttpVersion(string* serverResponse, map<string, string>* bufferComponents);
-string appendResponseCodeAndOK(string* serverResponse, map<string, string>* bufferComponents);
-string appendDate(string* serverResponse, map<string, string>* bufferComponents);
-string appendServer(string* serverResponse, map<string, string>* bufferComponents);
-string appendLastModified(string* serverResponse, map<string, string>* bufferComponents);
-string appendEtag(string* serverResponse, map<string, string>* bufferComponents);
-string appendContentType(string* serverResponse, map<string, string>* bufferComponents);
-string appendAcceptRanges(string* serverResponse, map<string, string>* bufferComponents);
-string appendConnectionCloseAndTwoNewLines(string* serverResponse, map<string, string>* bufferComponents);
-string appendFileContents(string* serverResponse, map<string, string>* bufferComponents);
-string sendProperlyFormattedResponse(string* serverResponse, map<string, string>* bufferComponents);
+void appendHttpVersion(string* serverResponse, map<string, string>* bufferComponents);
+void appendResponseCodeAndOK(string* serverResponse, map<string, string>* bufferComponents);
+void appendDate(string* serverResponse, map<string, string>* bufferComponents);
+void appendServer(string* serverResponse, map<string, string>* bufferComponents);
+void appendLastModified(string* serverResponse, map<string, string>* bufferComponents);
+void appendEtag(string* serverResponse, map<string, string>* bufferComponents);
+void appendContentType(string* serverResponse, map<string, string>* bufferComponents);
+void appendContentLength(string* serverResponse, map<string, string>* bufferComponents);
+void appendAcceptRanges(string* serverResponse, map<string, string>* bufferComponents);
+void appendConnectionCloseAndTwoNewLines(string* serverResponse, map<string, string>* bufferComponents);
+void appendFileContents(string* serverResponse, map<string, string>* bufferComponents);
+void sendProperlyFormattedResponse(string* serverResponse, map<string, string>* bufferComponents);
 
 int main(int argc, char *argv[])
 {
@@ -151,6 +152,8 @@ void myService(int in, int out, map<string, string>* bufferComponents)
     }
     if(bufferComponents->find("RequestType")->second == "GET"){
         getFilenameFromUri(bufferComponents->find("Filepath")->second, filename, count);
+				string serverResponse = "";
+				returnProperlyFormattedResponse(&serverResponse, bufferComponents);
         returnFile(out, filename);
     }
 }
@@ -368,70 +371,113 @@ void returnFile(int out, unsigned char* filename)
 
 //serverResponse will be a character array that we'll pass from method to method until it's completely built.
 void returnProperlyFormattedResponse(string* serverResponse, map<string, string>* bufferComponents){
-  appendHttpVersion(serverResponse, bufferComponents);
-  appendResponseCodeAndOK(serverResponse, bufferComponents);
-  appendDate(serverResponse, bufferComponents);
-  appendServer(serverResponse, bufferComponents);
-  appendLastModified(serverResponse, bufferComponents);
-  appendEtag(serverResponse, bufferComponents);
-  appendContentType(serverResponse, bufferComponents);
-  appendAcceptRanges(serverResponse, bufferComponents);
-  appendConnectionCloseAndTwoNewLines(serverResponse, bufferComponents);
-  appendFileContents(serverResponse, bufferComponents);
-  sendProperlyFormattedResponse(serverResponse, bufferComponents);
+	*serverResponse = "";
+	/*
+  *serverResponse = appendHttpVersion(serverResponse, bufferComponents);
+  *serverResponse = appendResponseCodeAndOK(serverResponse, bufferComponents);
+  *serverResponse = appendDate(serverResponse, bufferComponents);
+  *serverResponse = appendServer(serverResponse, bufferComponents);
+  *serverResponse = appendLastModified(serverResponse, bufferComponents);
+  *serverResponse = appendEtag(serverResponse, bufferComponents);
+  *serverResponse = appendContentType(serverResponse, bufferComponents);
+	*serverResponse = appendContentLength(serverResponse, bufferComponents);
+  *serverResponse = appendAcceptRanges(serverResponse, bufferComponents);
+  *serverResponse = appendConnectionCloseAndTwoNewLines(serverResponse, bufferComponents);
+  *serverResponse = appendFileContents(serverResponse, bufferComponents);
+	*/
+	appendHttpVersion(serverResponse, bufferComponents);
+	appendResponseCodeAndOK(serverResponse, bufferComponents);
+	appendDate(serverResponse, bufferComponents);
+	appendServer(serverResponse, bufferComponents);
+	appendLastModified(serverResponse, bufferComponents);
+	appendEtag(serverResponse, bufferComponents);
+	appendContentType(serverResponse, bufferComponents);
+	appendContentLength(serverResponse, bufferComponents);
+	appendAcceptRanges(serverResponse, bufferComponents);
+	appendConnectionCloseAndTwoNewLines(serverResponse, bufferComponents);
+	appendFileContents(serverResponse, bufferComponents);
+	cout << "*** server response is: ***" << endl;
+	cout << *serverResponse << endl;
+  //*serverResponse = sendProperlyFormattedResponse(serverResponse, bufferComponents);
 }
 
-string appendHttpVersion(string* serverResponse, map<string, string>* bufferComponents)
+/*
+const unsigned char * HARDCODED_REPLY = reinterpret_cast<const unsigned char *>(
+"HTTP/1.1 200 OK\n"
+"Date: Thu, 19 Feb 2009 12:27:04 GMT\n"
+"Server: Apache/2.2.3\n"
+"Last-Modified: Wed, 18 Jun 2003 16:05:58 GMT\n"
+"ETag: \"56d-9989200-1132c580\"\n"
+"Content-Type: text/html\n"
+"Content-Length: 86\n"
+"Accept-Ranges: bytes\n"
+"Connection: close\n"
+"\n"
+"<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>");
+*/
+
+//Append the HTTP version and a space.
+void appendHttpVersion(string* serverResponse, map<string, string>* bufferComponents)
 {
-	return "not implemented yet";
+	/*
+	serverResponse->append(bufferComponents->find("HTTPVersion")->second);
+	serverResponse->append(" ");
+	cout << "serverResponse is: " << &serverResponse << endl;
+	*/
+	serverResponse->append("HTTP/1.1 ");
 }
 
-string appendResponseCodeAndOK(string* serverResponse, map<string, string>* bufferComponents)
+void appendResponseCodeAndOK(string* serverResponse, map<string, string>* bufferComponents)
 {
-	return "not implemented yet";
+	serverResponse->append("200 OK\n");
 }
 
-string appendDate(string* serverResponse, map<string, string>* bufferComponents)
+void appendDate(string* serverResponse, map<string, string>* bufferComponents)
 {
-	return "not implemented yet";
+	serverResponse->append("Date: Thu, 19 Feb 2009 12:27:04 GMT\n");
 }
 
-string appendServer(string* serverResponse, map<string, string>* bufferComponents)
+void appendServer(string* serverResponse, map<string, string>* bufferComponents)
 {
-	return "not implemented yet";
+	serverResponse->append("Server: Apache/2.2.3\n");
 }
 
-string appendLastModified(string* serverResponse, map<string, string>* bufferComponents)
+void appendLastModified(string* serverResponse, map<string, string>* bufferComponents)
 {
-	return "not implemented yet";
+	serverResponse->append("Last-Modified: Wed, 18 Jun 2003 16:05:58 GMT\n");
 }
 
-string appendEtag(string* serverResponse, map<string, string>* bufferComponents)
+void appendEtag(string* serverResponse, map<string, string>* bufferComponents)
 {
-	return "not implemented yet";
+	serverResponse->append("ETag: \"56d-9989200-1132c580\"\n");
 }
 
-string appendContentType(string* serverResponse, map<string, string>* bufferComponents)
+void appendContentType(string* serverResponse, map<string, string>* bufferComponents)
 {
-	return "not implemented yet";
+	serverResponse->append("Content-Type: text/html\n");
 }
 
-string appendAcceptRanges(string* serverResponse, map<string, string>* bufferComponents)
+void appendContentLength(string* serverResponse, map<string, string>* bufferComponents)
 {
-	return "not implemented yet";
+	serverResponse->append("Content-Length: 86\n");
 }
 
-string appendConnectionCloseAndTwoNewLines(string* serverResponse, map<string, string>* bufferComponents)
+void appendAcceptRanges(string* serverResponse, map<string, string>* bufferComponents)
 {
-	return "not implemented yet";
+	serverResponse->append("Accept-Ranges: bytes\n");
 }
 
-string appendFileContents(string* serverResponse, map<string, string>* bufferComponents)
+void appendConnectionCloseAndTwoNewLines(string* serverResponse, map<string, string>* bufferComponents)
 {
-	return "not implemented yet";
+	serverResponse->append("Connection: close\n\n");
 }
 
-string sendProperlyFormattedResponse(string* serverResponse, map<string, string>* bufferComponents)
+void appendFileContents(string* serverResponse, map<string, string>* bufferComponents)
 {
-	return "not implemented yet";
+	serverResponse->append("<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>");
+}
+
+void sendProperlyFormattedResponse(string* serverResponse, map<string, string>* bufferComponents)
+{
+	const unsigned char * HARDCODED_REPLY2 = reinterpret_cast<const unsigned char *>((*serverResponse).c_str());
 }
