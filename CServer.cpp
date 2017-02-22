@@ -509,7 +509,7 @@ void sendProperlyFormattedResponse(int out, unsigned char* filename, string* ser
 			cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" << endl;
 			//cout << HARDCODED_REPLY << endl;
 			int OMGLENGTH = (*serverResponse).length();
-			char* output = NULL;
+			char output[MAX_FILE_SIZE];
 			castStringToChar(*serverResponse, output, OMGLENGTH);
 			printf("%s", output);
 			send(out, reinterpret_cast<const unsigned char *>(output), OMGLENGTH, 0);
