@@ -249,7 +249,7 @@ unsigned char* getHTTPVersion(unsigned char* buf, int* size, map<string, string>
     char* http = new char[*size];
 
     for(int j = 0; i < *size; i++, j++){
-        if(buf[i] == ' ' || buf[i] == '\n'){
+        if(buf[i] == ' ' || buf[i] == '\n' || buf[i] == '\r'){
             http[j] = '\0';
             string myHttp(http);
             bufferComponents->insert(pair<string, string>("HTTPVersion", myHttp));
@@ -371,6 +371,7 @@ void returnFile(int out, unsigned char* filename)
 
 //serverResponse will be a character array that we'll pass from method to method until it's completely built.
 void returnProperlyFormattedResponse(int out, unsigned char* filename, string* serverResponse, map<string, string>* bufferComponents){
+	serverResponse = new string;
 	*serverResponse = "";
 	/*
   *serverResponse = appendHttpVersion(serverResponse, bufferComponents);
@@ -396,10 +397,11 @@ void returnProperlyFormattedResponse(int out, unsigned char* filename, string* s
 	appendAcceptRanges(serverResponse, bufferComponents);
 	appendConnectionCloseAndTwoNewLines(serverResponse, bufferComponents);
 	appendFileContents(serverResponse, bufferComponents);
-	cout << "*** server response is: ***" << endl;
-	cout << *serverResponse << endl;
-	cout << "***************************" << endl;
+	//cout << "*** server response is: ***" << endl;
+	//cout << *serverResponse << endl;
+	//cout << "***************************" << endl;
   sendProperlyFormattedResponse(out, filename, serverResponse, bufferComponents);
+	delete serverResponse;
 }
 
 /*
@@ -420,62 +422,80 @@ const unsigned char * HARDCODED_REPLY = reinterpret_cast<const unsigned char *>(
 //Append the HTTP version and a space.
 void appendHttpVersion(string* serverResponse, map<string, string>* bufferComponents)
 {
-	/*
-	serverResponse->append(bufferComponents->find("HTTPVersion")->second);
-	serverResponse->append(" ");
-	cout << "serverResponse is: " << &serverResponse << endl;
-	*/
-	serverResponse->append("HTTP/1.1 ");
+
+	//string input = bufferComponents->at("HTTPVersion");
+	printf("*********************\n");
+	cout << (*bufferComponents).at("HTTPVersion") << endl;
+	printf("*********************\n");
+	string input = (*bufferComponents).at("HTTPVersion");
+	cout << "appendHttpVersion retrieved HTTPVersion from the map which is: \"" << input << "\"\n";
+	//serverResponse->append(input);
+	*serverResponse += input;
+	//serverResponse->append(" ");
+	*serverResponse += " ";
+	cout << "serverResponse is: \n" << *serverResponse << endl;
+
+	//serverResponse->append("HTTP/1.1 ");
 }
 
 void appendResponseCodeAndOK(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("200 OK\n");
+	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendDate(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("Date: Thu, 19 Feb 2009 12:27:04 GMT\n");
+	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendServer(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("Server: Apache/2.2.3\n");
+	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendLastModified(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("Last-Modified: Wed, 18 Jun 2003 16:05:58 GMT\n");
+	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendEtag(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("ETag: \"56d-9989200-1132c580\"\n");
+	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendContentType(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("Content-Type: text/html\n");
+	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendContentLength(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("Content-Length: 86\n");
+	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendAcceptRanges(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("Accept-Ranges: bytes\n");
+	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendConnectionCloseAndTwoNewLines(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("Connection: close\n\n");
+	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendFileContents(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>");
+	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void sendProperlyFormattedResponse(int out, unsigned char* filename, string* serverResponse, map<string, string>* bufferComponents)
@@ -497,21 +517,21 @@ void sendProperlyFormattedResponse(int out, unsigned char* filename, string* ser
 	/* If read was success, send data. */
 	if(nread > 0)
 	{
-	    printf("Sending \n");
+	    cout << "Sending" << endl;
 	    //write(out, buff, nread);
 	    //send(out, serverResponse, strlen(reinterpret_cast<const char *>(serverResponse)), 0);
-			cout << "Server response right before sending it out is: " << endl;
-			cout << *serverResponse << endl;
-			cout << "HARDCODED_REPLY right before sending it out is: " << endl;
-			int FML = strcmp((*serverResponse).c_str(), reinterpret_cast<const char *>(HARDCODED_REPLY));
-			cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" << endl;
-			cout << "server response and HARDCODED_REPLY are equal?  (True/False) - " << FML << endl;
-			cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" << endl;
+			//cout << "Server response right before sending it out is: " << endl;
+			cout << endl << *serverResponse << endl;
+			//cout << "HARDCODED_REPLY right before sending it out is: " << endl;
+			//int FML = strcmp((*serverResponse).c_str(), reinterpret_cast<const char *>(HARDCODED_REPLY));
+			//cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" << endl;
+			//cout << "server response and HARDCODED_REPLY are equal?  (True/False) - " << FML << endl;
+			//cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" << endl;
 			//cout << HARDCODED_REPLY << endl;
 			int OMGLENGTH = (*serverResponse).length();
 			char output[MAX_FILE_SIZE];
 			castStringToChar(*serverResponse, output, OMGLENGTH);
-			printf("%s", output);
+			//printf("%s", output);
 			send(out, reinterpret_cast<const unsigned char *>(output), OMGLENGTH, 0);
 			//send(out, reinterpret_cast<const unsigned char *>(serverResponse), OMGLENGTH, 0);
 			//send(out, HARDCODED_REPLY, OMGLENGTH, 0);	//THIS WORKS AND STUFF
