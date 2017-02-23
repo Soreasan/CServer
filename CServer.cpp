@@ -422,20 +422,8 @@ const unsigned char * HARDCODED_REPLY = reinterpret_cast<const unsigned char *>(
 //Append the HTTP version and a space.
 void appendHttpVersion(string* serverResponse, map<string, string>* bufferComponents)
 {
-
-	//string input = bufferComponents->at("HTTPVersion");
-	printf("*********************\n");
-	cout << (*bufferComponents).at("HTTPVersion") << endl;
-	printf("*********************\n");
-	string input = (*bufferComponents).at("HTTPVersion");
-	cout << "appendHttpVersion retrieved HTTPVersion from the map which is: \"" << input << "\"\n";
-	//serverResponse->append(input);
-	*serverResponse += input;
-	//serverResponse->append(" ");
+	*serverResponse += (*bufferComponents).at("HTTPVersion");
 	*serverResponse += " ";
-	cout << "serverResponse is: \n" << *serverResponse << endl;
-
-	//serverResponse->append("HTTP/1.1 ");
 }
 
 void appendResponseCodeAndOK(string* serverResponse, map<string, string>* bufferComponents)
