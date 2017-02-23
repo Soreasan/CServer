@@ -22,6 +22,7 @@
 #include <string.h>
 #include <iostream>
 #include <map>
+#include <time.h>
 using namespace std;
 
 int SERVER_PORT = 1067;
@@ -434,7 +435,14 @@ void appendResponseCodeAndOK(string* serverResponse, map<string, string>* buffer
 
 void appendDate(string* serverResponse, map<string, string>* bufferComponents)
 {
-	serverResponse->append("Date: Thu, 19 Feb 2009 12:27:04 GMT\n");
+	//serverResponse->append("Date: Thu, 19 Feb 2009 12:27:04 GMT\n");
+	time_t rawtime;
+	struct tm *timeinfo;
+	char buffer[80];
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+	strftime(buffer, 80, "Date: %c %Z\n", timeinfo);
+	*serverResponse += buffer;
 	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
