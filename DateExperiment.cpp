@@ -12,11 +12,11 @@ int main(){
 
     time(&rawtime);
     timeinfo = localtime(&rawtime);
-    strftime(buffer, 80, "Now it's %I:%M%p.", timeinfo);
-    puts(buffer);
+    //strftime(buffer, 80, "Now it's %I:%M%p.", timeinfo);
+    //puts(buffer);
     
     strftime(buffer, 80, "Date: %c %Z", timeinfo);
-    puts(buffer);
+    //puts(buffer);
 
     string test = "";
     test += buffer;
