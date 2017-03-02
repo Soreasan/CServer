@@ -70,6 +70,7 @@ void returnFile(int out, unsigned char* filename);
 void returnProperlyFormattedResponse(int out, unsigned char* filename, string* serverResponse, map<string, string>* bufferComponents);
 
 //These methods are used to append certain components of the response.
+void prepareFile(map<string, string>* bufferComponents);
 void appendHttpVersion(string* serverResponse, map<string, string>* bufferComponents);
 void appendResponseCodeAndOK(string* serverResponse, map<string, string>* bufferComponents);
 void appendDate(string* serverResponse, map<string, string>* bufferComponents);
@@ -374,19 +375,7 @@ void returnFile(int out, unsigned char* filename)
 void returnProperlyFormattedResponse(int out, unsigned char* filename, string* serverResponse, map<string, string>* bufferComponents){
 	serverResponse = new string;
 	*serverResponse = "";
-	/*
-  *serverResponse = appendHttpVersion(serverResponse, bufferComponents);
-  *serverResponse = appendResponseCodeAndOK(serverResponse, bufferComponents);
-  *serverResponse = appendDate(serverResponse, bufferComponents);
-  *serverResponse = appendServer(serverResponse, bufferComponents);
-  *serverResponse = appendLastModified(serverResponse, bufferComponents);
-  *serverResponse = appendEtag(serverResponse, bufferComponents);
-  *serverResponse = appendContentType(serverResponse, bufferComponents);
-	*serverResponse = appendContentLength(serverResponse, bufferComponents);
-  *serverResponse = appendAcceptRanges(serverResponse, bufferComponents);
-  *serverResponse = appendConnectionCloseAndTwoNewLines(serverResponse, bufferComponents);
-  *serverResponse = appendFileContents(serverResponse, bufferComponents);
-	*/
+    prepareFile(map<string, string>* bufferComponents)
 	appendHttpVersion(serverResponse, bufferComponents);
 	appendResponseCodeAndOK(serverResponse, bufferComponents);
 	appendDate(serverResponse, bufferComponents);
@@ -398,10 +387,7 @@ void returnProperlyFormattedResponse(int out, unsigned char* filename, string* s
 	appendAcceptRanges(serverResponse, bufferComponents);
 	appendConnectionCloseAndTwoNewLines(serverResponse, bufferComponents);
 	appendFileContents(serverResponse, bufferComponents);
-	//cout << "*** server response is: ***" << endl;
-	//cout << *serverResponse << endl;
-	//cout << "***************************" << endl;
-  sendProperlyFormattedResponse(out, filename, serverResponse, bufferComponents);
+    sendProperlyFormattedResponse(out, filename, serverResponse, bufferComponents);
 	delete serverResponse;
 }
 
@@ -420,6 +406,45 @@ const unsigned char * HARDCODED_REPLY = reinterpret_cast<const unsigned char *>(
 "<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>");
 */
 
+
+void prepareFile(map<string, string>* bufferComponents){
+    unsigned char buff[MAX_FILE_SIZE]={0};
+    int count;
+    //FILE *fp = fopen(reinterpret_cast<const char*>(filename), "rb");
+    //bufferComponents->insert(pair<string, string>("Filepath", filepath));
+    string filename = bufferComponents->find("Filepath")->second;
+    FILE *fp = fopen(reinterpret_cast<const char*>(filename), "rb");
+    if(fp==NULL)
+    {
+        printf("File open error");
+        return;
+    }else{
+        printf("There is a filename and it's %s\n", filename);
+    }
+    int nread = fread(buff,1,MAX_FILE_SIZE,fp);
+    printf("Bytes read %d \n", nread);
+
+    /* If read was success, send data. */
+    if(nread > 0)
+    {
+        printf("Sending \n");
+        //write(out, buff, nread);
+        send(out, HARDCODED_REPLY, strlen(reinterpret_cast<const char *>(HARDCODED_REPLY)), 0);
+    }
+
+    /*
+     * There is something tricky going on with read ..
+     * Either there was error, or we reached end of file.
+     */
+    if (nread < MAX_FILE_SIZE)
+    {
+        if (feof(fp))
+            printf("End of file\n");
+        if (ferror(fp))
+            printf("Error reading\n");
+    }
+}
+
 //Append the HTTP version and a space.
 void appendHttpVersion(string* serverResponse, map<string, string>* bufferComponents)
 {
@@ -435,20 +460,20 @@ void appendResponseCodeAndOK(string* serverResponse, map<string, string>* buffer
 
 void appendDate(string* serverResponse, map<string, string>* bufferComponents)
 {
-	//serverResponse->append("Date: Thu, 19 Feb 2009 12:27:04 GMT\n");
 	time_t rawtime;
 	struct tm *timeinfo;
 	char buffer[80];
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
-	strftime(buffer, 80, "Date: %c %Z\n", timeinfo);
+	//strftime(buffer, 80, "Date: %c %Z\n", timeinfo); //Not formatted correctly
+    strftime(buffer, 80, "Date: %a, %d %b %G %T %Z\n", timeinfo);
 	*serverResponse += buffer;
-	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendServer(string* serverResponse, map<string, string>* bufferComponents)
 {
-	serverResponse->append("Server: Apache/2.2.3\n");
+    serverResponse->append("Server: CServer/1.0.0\n");
+	//serverResponse->append("Server: Apache/2.2.3\n");
 	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
