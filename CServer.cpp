@@ -381,8 +381,8 @@ void appendHttpVersion(string* serverResponse, map<string, string>* bufferCompon
 
 void appendResponseCodeAndOK(string* serverResponse, map<string, string>* bufferComponents)
 {
-	serverResponse->append("200 OK\n");
-	cout << "serverResponse is: \n" << *serverResponse << endl;
+	string response = "200 OK\n";
+	serverResponse->append(response);
 }
 
 void appendDate(string* serverResponse, map<string, string>* bufferComponents)
@@ -392,58 +392,48 @@ void appendDate(string* serverResponse, map<string, string>* bufferComponents)
 	char buffer[80];
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
-	//strftime(buffer, 80, "Date: %c %Z\n", timeinfo); //Not formatted correctly
-    strftime(buffer, 80, "Date: %a, %d %b %G %T %Z\n", timeinfo);
+  strftime(buffer, 80, "Date: %a, %d %b %G %T %Z\n", timeinfo);
 	*serverResponse += buffer;
 }
 
 void appendServer(string* serverResponse, map<string, string>* bufferComponents)
 {
-    serverResponse->append("Server: CServer/1.0.0\n");
-	//serverResponse->append("Server: Apache/2.2.3\n");
-	cout << "serverResponse is: \n" << *serverResponse << endl;
+  serverResponse->append("Server: CServer/1.0.0\n");
 }
 
 void appendLastModified(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("Last-Modified: Wed, 18 Jun 2003 16:05:58 GMT\n");
-	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendEtag(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("ETag: \"56d-9989200-1132c580\"\n");
-	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendContentType(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("Content-Type: text/html\n");
-	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendContentLength(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("Content-Length: 86\n");
-	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendAcceptRanges(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("Accept-Ranges: bytes\n");
-	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendConnectionCloseAndTwoNewLines(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("Connection: close\n\n");
-	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void appendFileContents(string* serverResponse, map<string, string>* bufferComponents)
 {
 	serverResponse->append("<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>");
-	cout << "serverResponse is: \n" << *serverResponse << endl;
 }
 
 void sendProperlyFormattedResponse(int out, unsigned char* filename, string* serverResponse, map<string, string>* bufferComponents)
@@ -466,26 +456,10 @@ void sendProperlyFormattedResponse(int out, unsigned char* filename, string* ser
 	if(nread > 0)
 	{
 	    cout << "Sending" << endl;
-	    //write(out, buff, nread);
-	    //send(out, serverResponse, strlen(reinterpret_cast<const char *>(serverResponse)), 0);
-			//cout << "Server response right before sending it out is: " << endl;
 			cout << endl << *serverResponse << endl;
-			//cout << "HARDCODED_REPLY right before sending it out is: " << endl;
-			//int FML = strcmp((*serverResponse).c_str(), reinterpret_cast<const char *>(HARDCODED_REPLY));
-			//cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" << endl;
-			//cout << "server response and HARDCODED_REPLY are equal?  (True/False) - " << FML << endl;
-			//cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" << endl;
-			//cout << HARDCODED_REPLY << endl;
-			int OMGLENGTH = (*serverResponse).length();
 			char output[MAX_FILE_SIZE];
-			castStringToChar(*serverResponse, output, OMGLENGTH);
-			//printf("%s", output);
-			send(out, reinterpret_cast<const unsigned char *>(output), OMGLENGTH, 0);
-			//send(out, reinterpret_cast<const unsigned char *>(serverResponse), OMGLENGTH, 0);
-			//send(out, HARDCODED_REPLY, OMGLENGTH, 0);	//THIS WORKS AND STUFF
-			//send(out, reinterpret_cast<const unsigned char *>(serverResponse), strlen(reinterpret_cast<const char *>(serverResponse)), 0);
-			//send(out, HARDCODED_REPLY, strlen(reinterpret_cast<const char *>(HARDCODED_REPLY)), 0);
-			//write(out, reinterpret_cast<const unsigned char *>(serverResponse), strlen((*serverResponse).c_str()));
+			castStringToChar(*serverResponse, output, serverResponse->length());
+			send(out, reinterpret_cast<const unsigned char *>(output), serverResponse->length(), 0);
 	}
 
 	/*
