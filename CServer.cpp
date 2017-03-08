@@ -406,7 +406,12 @@ const unsigned char * HARDCODED_REPLY = reinterpret_cast<const unsigned char *>(
 "<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>");
 */
 
-
+/**
+  * First retrieve the filepath from our bufferComponents map.
+  * Then check if the file is there.
+  * If the file is there move its contents into the bufferComponents map
+  * If the file isn't there then move the contents of a 404 error message into bufferComponents
+  */
 void prepareFile(map<string, string>* bufferComponents){
     unsigned char buff[MAX_FILE_SIZE]={0};
     int count;
@@ -416,32 +421,21 @@ void prepareFile(map<string, string>* bufferComponents){
     FILE *fp = fopen(reinterpret_cast<const char*>(filename), "rb");
     if(fp==NULL)
     {
-        printf("File open error");
+        bufferComponents->insert(pair<string, string>("Filecontents", 
+            "<html><head><title>404 File not found</title></head><body><h1>404 File Not Found</h1></body></html>"));
         return;
-    }else{
-        printf("There is a filename and it's %s\n", filename);
     }
+
     int nread = fread(buff,1,MAX_FILE_SIZE,fp);
     printf("Bytes read %d \n", nread);
 
-    /* If read was success, send data. */
     if(nread > 0)
     {
-        printf("Sending \n");
-        //write(out, buff, nread);
-        send(out, HARDCODED_REPLY, strlen(reinterpret_cast<const char *>(HARDCODED_REPLY)), 0);
-    }
-
-    /*
-     * There is something tricky going on with read ..
-     * Either there was error, or we reached end of file.
-     */
-    if (nread < MAX_FILE_SIZE)
-    {
-        if (feof(fp))
-            printf("End of file\n");
-        if (ferror(fp))
-            printf("Error reading\n");
+        bufferComponents->insert(pair<string, string>("Filecontents", ));
+        return;
+    }else{
+        bufferComponents->insert(pair<string, string>("Filecontents", 
+            "<html><head><title>404 File not found</title></head><body><h1>404 File Not Found</h1></body></html>"));
     }
 }
 
