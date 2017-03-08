@@ -31,19 +31,6 @@ const int FILENAME_BUFFER_SIZE = 1024;
 const int MAX_FILE_SIZE = 1048576;      //1 MiB, larger sizes such as 10 MiB cause segmentation faults.
 string FILEPATH_FOLDER = "/Users/kennethadair/Documents/CServer";   //The filepath on my computer to the files to return.
 
-const unsigned char * HARDCODED_REPLY = reinterpret_cast<const unsigned char *>(
-"HTTP/1.1 200 OK\n"
-"Date: Thu, 19 Feb 2009 12:27:04 GMT\n"
-"Server: Apache/2.2.3\n"
-"Last-Modified: Wed, 18 Jun 2003 16:05:58 GMT\n"
-"ETag: \"56d-9989200-1132c580\"\n"
-"Content-Type: text/html\n"
-"Content-Length: 86\n"
-"Accept-Ranges: bytes\n"
-"Connection: close\n"
-"\n"
-"<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>");
-
 //Retrieving information over the commandline.
 void setPort(int argc, char *argv[]);
 void setFilepath(int argc, char *argv[]);
@@ -332,50 +319,12 @@ void castStringToChar(string stringToConvert, char* output, int outputSize)
   output[i] = '\0';
 }
 
-/** @AUTHOR Kenneth Adair
-*   This method writes the contents of a file to an open file descriptor.
-*/
-void returnFile(int out, unsigned char* filename)
-{
-    unsigned char buff[MAX_FILE_SIZE]={0};
-    int count;
-    FILE *fp = fopen(reinterpret_cast<const char*>(filename), "rb");
-    if(fp==NULL)
-    {
-        printf("File open error");
-        return;
-    }else{
-        printf("There is a filename and it's %s\n", filename);
-    }
-    int nread = fread(buff,1,MAX_FILE_SIZE,fp);
-    printf("Bytes read %d \n", nread);
-
-    /* If read was success, send data. */
-    if(nread > 0)
-    {
-        printf("Sending \n");
-        //write(out, buff, nread);
-        send(out, HARDCODED_REPLY, strlen(reinterpret_cast<const char *>(HARDCODED_REPLY)), 0);
-    }
-
-    /*
-     * There is something tricky going on with read ..
-     * Either there was error, or we reached end of file.
-     */
-    if (nread < MAX_FILE_SIZE)
-    {
-        if (feof(fp))
-            printf("End of file\n");
-        if (ferror(fp))
-            printf("Error reading\n");
-    }
-}
 
 //serverResponse will be a character array that we'll pass from method to method until it's completely built.
 void returnProperlyFormattedResponse(int out, unsigned char* filename, string* serverResponse, map<string, string>* bufferComponents){
 	serverResponse = new string;
 	*serverResponse = "";
-    prepareFile(map<string, string>* bufferComponents)
+  prepareFile(bufferComponents);
 	appendHttpVersion(serverResponse, bufferComponents);
 	appendResponseCodeAndOK(serverResponse, bufferComponents);
 	appendDate(serverResponse, bufferComponents);
@@ -390,22 +339,6 @@ void returnProperlyFormattedResponse(int out, unsigned char* filename, string* s
     sendProperlyFormattedResponse(out, filename, serverResponse, bufferComponents);
 	delete serverResponse;
 }
-
-/*
-const unsigned char * HARDCODED_REPLY = reinterpret_cast<const unsigned char *>(
-"HTTP/1.1 200 OK\n"
-"Date: Thu, 19 Feb 2009 12:27:04 GMT\n"
-"Server: Apache/2.2.3\n"
-"Last-Modified: Wed, 18 Jun 2003 16:05:58 GMT\n"
-"ETag: \"56d-9989200-1132c580\"\n"
-"Content-Type: text/html\n"
-"Content-Length: 86\n"
-"Accept-Ranges: bytes\n"
-"Connection: close\n"
-"\n"
-"<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>");
-*/
-
 /**
   * First retrieve the filepath from our bufferComponents map.
   * Then check if the file is there.
@@ -418,10 +351,10 @@ void prepareFile(map<string, string>* bufferComponents){
     //FILE *fp = fopen(reinterpret_cast<const char*>(filename), "rb");
     //bufferComponents->insert(pair<string, string>("Filepath", filepath));
     string filename = bufferComponents->find("Filepath")->second;
-    FILE *fp = fopen(reinterpret_cast<const char*>(filename), "rb");
+    FILE *fp = fopen(reinterpret_cast<const char*>(filename.c_str()), "rb");
     if(fp==NULL)
     {
-        bufferComponents->insert(pair<string, string>("Filecontents", 
+        bufferComponents->insert(pair<string, string>("Filecontents",
             "<html><head><title>404 File not found</title></head><body><h1>404 File Not Found</h1></body></html>"));
         return;
     }
@@ -431,10 +364,10 @@ void prepareFile(map<string, string>* bufferComponents){
 
     if(nread > 0)
     {
-        bufferComponents->insert(pair<string, string>("Filecontents", ));
-        return;
+			//PLACEHOLDER
+      bufferComponents->insert(pair<string, string>("Filecontents", "<html><head><title>404 File not found</title></head><body><h1>404 File Not Found</h1></body></html>"));
     }else{
-        bufferComponents->insert(pair<string, string>("Filecontents", 
+        bufferComponents->insert(pair<string, string>("Filecontents",
             "<html><head><title>404 File not found</title></head><body><h1>404 File Not Found</h1></body></html>"));
     }
 }
