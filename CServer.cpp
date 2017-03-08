@@ -143,7 +143,6 @@ void myService(int in, int out, map<string, string>* bufferComponents)
         getFilenameFromUri(bufferComponents->find("Filepath")->second, filename, count);
 				string serverResponse = "";
 				returnProperlyFormattedResponse(out, filename, &serverResponse, bufferComponents);
-        //returnFile(out, filename);
     }
 }
 
@@ -418,6 +417,7 @@ void appendContentType(string* serverResponse, map<string, string>* bufferCompon
 
 void appendContentLength(string* serverResponse, map<string, string>* bufferComponents)
 {
+
 	serverResponse->append("Content-Length: 86\n");
 }
 
