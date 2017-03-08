@@ -374,7 +374,7 @@ void prepareFile(map<string, string>* bufferComponents){
 //Append the HTTP version and a space.
 void appendHttpVersion(string* serverResponse, map<string, string>* bufferComponents)
 {
-	*serverResponse += (*bufferComponents).at("HTTPVersion");
+	*serverResponse += bufferComponents->at("HTTPVersion");
 	*serverResponse += " ";
 }
 
