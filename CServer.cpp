@@ -23,6 +23,8 @@
 #include <iostream>
 #include <map>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 using namespace std;
 
 int SERVER_PORT = 1067;
@@ -73,7 +75,7 @@ void sendProperlyFormattedResponse(int out, unsigned char* filename, string* ser
 
 int main(int argc, char *argv[])
 {
-	  setPort(argc, argv);
+	setPort(argc, argv);
     setFilepath(argc, argv);
     //Boilerplate networking code
     int sock, fd, client_len;
@@ -336,6 +338,7 @@ void returnProperlyFormattedResponse(int out, unsigned char* filename, string* s
 	appendConnectionCloseAndTwoNewLines(serverResponse, bufferComponents);
 	appendFileContents(serverResponse, bufferComponents);
     sendProperlyFormattedResponse(out, filename, serverResponse, bufferComponents);
+    cout << "serverResponse is: \n" << *serverResponse << endl;
 	delete serverResponse;
 }
 /**
@@ -391,18 +394,29 @@ void appendDate(string* serverResponse, map<string, string>* bufferComponents)
 	char buffer[80];
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
-  strftime(buffer, 80, "Date: %a, %d %b %G %T %Z\n", timeinfo);
+    strftime(buffer, 80, "Date: %a, %d %b %G %T %Z\n", timeinfo);
 	*serverResponse += buffer;
 }
 
 void appendServer(string* serverResponse, map<string, string>* bufferComponents)
 {
-  serverResponse->append("Server: CServer/1.0.0\n");
+    serverResponse->append("Server: CServer/1.0.0\n");
 }
 
 void appendLastModified(string* serverResponse, map<string, string>* bufferComponents)
 {
-	serverResponse->append("Last-Modified: Wed, 18 Jun 2003 16:05:58 GMT\n");
+    struct stat result;
+    if(stat(bufferComponents->find("Filepath")->second.c_str(), &result) == 0){
+        time_t rawtime = result.st_mtime;
+        struct tm *timeinfo;
+        char buffer[80];
+        //time(&rawtime);
+        timeinfo = localtime(&rawtime);
+        strftime(buffer, 80, "Last-Modified: %a, %d %b %G %T %Z\n", timeinfo);
+        *serverResponse += buffer;
+    }else{
+	   serverResponse->append("Last-Modified: Wed, 18 Jun 2003 16:05:58 GMT\n");
+    }
 }
 
 void appendEtag(string* serverResponse, map<string, string>* bufferComponents)
