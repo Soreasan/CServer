@@ -25,6 +25,8 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+//Cast size_t to string
+#include <sstream>
 using namespace std;
 
 int SERVER_PORT = 1067;
@@ -348,31 +350,87 @@ void returnProperlyFormattedResponse(int out, unsigned char* filename, string* s
   * If the file isn't there then move the contents of a 404 error message into bufferComponents
   */
 void prepareFile(map<string, string>* bufferComponents){
+		stringstream ostr;
+
     unsigned char buff[MAX_FILE_SIZE]={0};
     int count;
     //FILE *fp = fopen(reinterpret_cast<const char*>(filename), "rb");
     //bufferComponents->insert(pair<string, string>("Filepath", filepath));
     string filename = bufferComponents->find("Filepath")->second;
     FILE *fp = fopen(reinterpret_cast<const char*>(filename.c_str()), "rb");
+
+		string error404 = "<html><head><title>404 File not found</title></head><body><h1>404 File Not Found</h1></body></html>";
+
+/*
     if(fp==NULL)
     {
-        bufferComponents->insert(pair<string, string>("Filecontents",
-            "<html><head><title>404 File not found</title></head><body><h1>404 File Not Found</h1></body></html>"));
+        bufferComponents->insert(pair<string, string>("Filecontents", error404));
+				//http://stackoverflow.com/questions/10510077/size-t-convert-cast-to-string-in-c
+				//http://stackoverflow.com/questions/5290089/how-to-convert-a-number-to-string-and-vice-versa-in-c
+				ostr << error404.length();
+				string theNumberString = ostr.str();
+				bufferComponents->insert(pair<string, string>("Contentlength", theNumberString));
         return;
     }
+*/
+		if(fp){
+	    int nread = fread(buff,1,MAX_FILE_SIZE,fp);
+	    printf("Bytes read %d \n", nread);
 
-    int nread = fread(buff,1,MAX_FILE_SIZE,fp);
-    printf("Bytes read %d \n", nread);
-
-    if(nread > 0)
-    {
-			//PLACEHOLDER
-      bufferComponents->insert(pair<string, string>("Filecontents", "<html><head><title>404 File not found</title></head><body><h1>404 File Not Found</h1></body></html>"));
-    }else{
-        bufferComponents->insert(pair<string, string>("Filecontents",
-            "<html><head><title>404 File not found</title></head><body><h1>404 File Not Found</h1></body></html>"));
-    }
+	    if(nread > 0)
+	    {
+				//PLACEHOLDER
+				string filecontents(reinterpret_cast<char*>(buff));
+	      bufferComponents->insert(pair<string, string>("Filecontents", filecontents));
+				//http://stackoverflow.com/questions/10510077/size-t-convert-cast-to-string-in-c
+				//http://stackoverflow.com/questions/5290089/how-to-convert-a-number-to-string-and-vice-versa-in-c
+				ostr << filecontents.length();
+				string theNumberString = ostr.str();
+				bufferComponents->insert(pair<string, string>("Contentlength", theNumberString));
+	    }else{
+	        bufferComponents->insert(pair<string, string>("Filecontents", error404));
+					//http://stackoverflow.com/questions/10510077/size-t-convert-cast-to-string-in-c
+					//http://stackoverflow.com/questions/5290089/how-to-convert-a-number-to-string-and-vice-versa-in-c
+					ostr << error404.length();
+					string theNumberString = ostr.str();
+					bufferComponents->insert(pair<string, string>("Contentlength", theNumberString));
+	    }
+		}else{
+			bufferComponents->insert(pair<string, string>("Filecontents", error404));
+			//http://stackoverflow.com/questions/10510077/size-t-convert-cast-to-string-in-c
+			//http://stackoverflow.com/questions/5290089/how-to-convert-a-number-to-string-and-vice-versa-in-c
+			ostr << error404.length();
+			string theNumberString = ostr.str();
+			bufferComponents->insert(pair<string, string>("Contentlength", theNumberString));
+			return;
+		}
 }
+/*
+//http://stackoverflow.com/questions/174531/easiest-way-to-get-files-contents-in-c
+void test(map<string, string>* bufferComponents){
+	char * buffer = 0;
+	long length;
+	FILE * f = fopen (filename, "rb");
+
+	if (f)
+	{
+	  fseek (f, 0, SEEK_END);
+	  length = ftell (f);
+	  fseek (f, 0, SEEK_SET);
+	  buffer = malloc (length);
+	  if (buffer)
+	  {
+	    fread (buffer, 1, length, f);
+	  }
+	  fclose (f);
+	}
+
+	if (buffer)
+	{
+	  // start to process your data / extract strings here...
+	}
+}
+*/
 
 //Append the HTTP version and a space.
 void appendHttpVersion(string* serverResponse, map<string, string>* bufferComponents)
@@ -431,8 +489,10 @@ void appendContentType(string* serverResponse, map<string, string>* bufferCompon
 
 void appendContentLength(string* serverResponse, map<string, string>* bufferComponents)
 {
-
-	serverResponse->append("Content-Length: 86\n");
+	//serverResponse->append("Content-Length: 86\n");
+	serverResponse->append("Content-Length: ");
+	serverResponse->append(bufferComponents->at("Contentlength"));
+	serverResponse->append("\n");
 }
 
 void appendAcceptRanges(string* serverResponse, map<string, string>* bufferComponents)
@@ -447,7 +507,8 @@ void appendConnectionCloseAndTwoNewLines(string* serverResponse, map<string, str
 
 void appendFileContents(string* serverResponse, map<string, string>* bufferComponents)
 {
-	serverResponse->append("<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>");
+	//serverResponse->append("<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>");
+	serverResponse->append(bufferComponents->at("Filecontents"));
 }
 
 void sendProperlyFormattedResponse(int out, unsigned char* filename, string* serverResponse, map<string, string>* bufferComponents)
